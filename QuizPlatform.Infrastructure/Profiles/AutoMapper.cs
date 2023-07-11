@@ -14,9 +14,9 @@ public class AutoMapper : Profile
 
         CreateMap<CreateQuestionDto, Question>()
             .ForMember(m => m.Content, c => c.MapFrom(s => s.Question))
-            .ForMember(m => m.IdType, o => o.MapFrom(s => s.QuestionType));
+            .ForMember(m => m.QuestionType, o => o.MapFrom(s => new QuestionType { Name = s.QuestionType }));
         CreateMap<Question, CreateQuestionDto>()
-            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.IdType))
+            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.QuestionType!.Name))
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
 
         CreateMap<CreateAnswerDto, QuestionAnswer>()
@@ -24,11 +24,19 @@ public class AutoMapper : Profile
         CreateMap<QuestionAnswer, CreateAnswerDto>()
             .ForMember(m => m.Answer, o => o.MapFrom(s => s.Content));
 
+        CreateMap<Question, QuestionDto>()
+            .ForMember(m => m.Question, o => o.MapFrom(s => s.Content))
+            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.QuestionType!.Name))
+            .ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
+
         CreateMap<Set, SetDto>()
             .ForMember(m => m.SetId, o => o.MapFrom(s => s.Id));
         CreateMap<QuestionSet, QuestionDto>()
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Question!.Content))
-            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.Question!.IdType))
+            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.Question!.QuestionType!.Name))
             .ForMember(m => m.Answers, o => o.MapFrom(s => s.Question!.Answers!.Select(e => e.Content)));
+
+        CreateMap<CreateSetDto, Set>();
+            
     }
 }

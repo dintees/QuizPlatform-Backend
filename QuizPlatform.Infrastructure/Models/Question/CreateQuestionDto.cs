@@ -1,8 +1,10 @@
-﻿namespace QuizPlatform.Infrastructure.Models.Question;
+﻿using QuizPlatform.Infrastructure.Entities;
+
+namespace QuizPlatform.Infrastructure.Models.Question;
 
 public class CreateQuestionDto
 {
     public string? Question { get; set; }
-    public int QuestionType { get; set; }
-    public CreateAnswerDto[]? Answers { get; set; }
+    public QuestionTypeName QuestionType { get; set; }
+    public List<CreateAnswerDto>? Answers { get; set; }
 }

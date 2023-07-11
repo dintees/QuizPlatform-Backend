@@ -17,13 +17,13 @@ public class QuestionService : IQuestionService
         _mapper = mapper;
     }
 
-    public async Task<CreateQuestionDto?>? GetByIdAsync(int id)
+    public async Task<QuestionDto?> GetByIdAsync(int id)
     {
         var question = await _context.Questions.AsNoTracking()
             .Include(e => e.Answers)
             .FirstOrDefaultAsync(e => e.Id == id);
         if (question is null) return null;
-        var questionDto = _mapper.Map<CreateQuestionDto>(question);
+        var questionDto = _mapper.Map<QuestionDto>(question);
         return questionDto;
     }
 
@@ -41,7 +41,7 @@ public class QuestionService : IQuestionService
         if (question is null) return false;
 
         question.Content = createQuestionDto.Question;
-        question.IdType = createQuestionDto.QuestionType;
+        question.QuestionType = await _context.QuestionTypes.FirstOrDefaultAsync(e => e.Name == createQuestionDto.QuestionType);
         if (question.Answers is not null) 
              _context.Answers.RemoveRange(question.Answers);
 
@@ -52,13 +52,13 @@ public class QuestionService : IQuestionService
         return true;
     }
     
-    public async Task<bool> DeleteByIdAsync(int id)
-    {
-        return false;
+    //public async Task<bool> DeleteByIdAsync(int id)
+    //{
+    //    return false;
         // var question = await _context.Questions.FirstOrDefaultAsync(e => e.Id == id);
         // if (question is null) return false;
         // _context.Questions.Remove(question);
         // await _context.SaveChangesAsync();
         // return true;
-    }
+    //}
 }
