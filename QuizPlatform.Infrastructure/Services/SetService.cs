@@ -71,4 +71,13 @@ public class SetService : ISetService
         bool isRemoved = await _context.SaveChangesAsync() > 0;
         return isRemoved;
     }
+
+    public async Task<bool> DeleteByIdAsync(int id)
+    {
+        var set = await _context.Sets.FirstOrDefaultAsync(e => e.Id == id);
+        if (set is null) return false;
+        set.IsDeleted = true;
+        bool isRemoved = await _context.SaveChangesAsync() > 0;
+        return isRemoved;
+    }
 }

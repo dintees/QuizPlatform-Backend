@@ -6,7 +6,7 @@ public class Question
     public string? Content { get; set; }
     public int QuestionTypeId { get; set; }
     public virtual QuestionType? QuestionType { get; set; }
+    public bool IsDeleted { get; set; }
     public ICollection<QuestionAnswer>? Answers { get; set; }
-    
     public ICollection<QuestionSet>? Sets { get; set; }
 }

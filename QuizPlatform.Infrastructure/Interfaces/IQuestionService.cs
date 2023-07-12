@@ -7,5 +7,5 @@ public interface IQuestionService
     Task<QuestionDto?> GetByIdAsync(int id);
     Task<bool> CreateQuestionAsync(CreateQuestionDto dto);
     Task<bool> ModifyQuestion(int id, CreateQuestionDto createQuestionDto);
-    //Task<bool> DeleteByIdAsync(int id);
+    Task<bool> DeleteByIdAsync(int id);
 }

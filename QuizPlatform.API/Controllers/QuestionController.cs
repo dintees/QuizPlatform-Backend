@@ -14,7 +14,7 @@ public class QuestionController : ControllerBase
     {
         _questionService = questionService;
     }
-    
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult> GetById(int id)
     {
@@ -28,7 +28,7 @@ public class QuestionController : ControllerBase
     {
         bool isCreated = await _questionService.CreateQuestionAsync(createQuestionDto);
         if (!isCreated) return BadRequest();
-        
+
         return Ok();
     }
 
@@ -40,10 +40,10 @@ public class QuestionController : ControllerBase
         return Ok();
     }
 
-    /*[HttpDelete("delete/{id:int}")]
+    [HttpDelete("delete/{id:int}")]
     public async Task<ActionResult> DeleteQuestion(int id)
     {
         bool isDeleted = await _questionService.DeleteByIdAsync(id);
         return isDeleted ? Ok() : BadRequest();
-    }*/
+    }
 }

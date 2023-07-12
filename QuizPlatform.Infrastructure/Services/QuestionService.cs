@@ -30,6 +30,9 @@ public class QuestionService : IQuestionService
     public async Task<bool> CreateQuestionAsync(CreateQuestionDto createQuestionDto)
     {
         var question = _mapper.Map<Question>(createQuestionDto);
+        var questionType = await _context.QuestionTypes.FirstOrDefaultAsync(e => e.Name == createQuestionDto.QuestionType);
+        if (questionType is null) return false;
+        question.QuestionType = questionType;
         await _context.Questions.AddAsync(question);
         var created = await _context.SaveChangesAsync() > 0;
         return created;
@@ -41,24 +44,25 @@ public class QuestionService : IQuestionService
         if (question is null) return false;
 
         question.Content = createQuestionDto.Question;
-        question.QuestionType = await _context.QuestionTypes.FirstOrDefaultAsync(e => e.Name == createQuestionDto.QuestionType);
+        var questionType = await _context.QuestionTypes.FirstOrDefaultAsync(e => e.Name == createQuestionDto.QuestionType);
+        if (questionType is null) return false;
+        question.QuestionType = questionType;
         if (question.Answers is not null) 
              _context.Answers.RemoveRange(question.Answers);
 
         question.Answers = _mapper.Map<ICollection<QuestionAnswer>>(createQuestionDto.Answers);
 
-        await _context.SaveChangesAsync();
+        bool isModified = await _context.SaveChangesAsync() > 0;
         
+        return isModified;
+    }
+
+    public async Task<bool> DeleteByIdAsync(int id)
+    {
+        var question = await _context.Questions.FirstOrDefaultAsync(e => e.Id == id);
+        if (question is null) return false;
+        question.IsDeleted = true;
+        bool isDeleted = await _context.SaveChangesAsync() > 0;
         return true;
     }
-    
-    //public async Task<bool> DeleteByIdAsync(int id)
-    //{
-    //    return false;
-        // var question = await _context.Questions.FirstOrDefaultAsync(e => e.Id == id);
-        // if (question is null) return false;
-        // _context.Questions.Remove(question);
-        // await _context.SaveChangesAsync();
-        // return true;
-    //}
 }

@@ -9,4 +9,5 @@ public interface ISetService
     Task<bool> CreateNewSetAsync(CreateSetDto dto);
     Task<bool> AddQuestionToSetAsync(int setId, int questionId);
     Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId);
+    Task<bool> DeleteByIdAsync(int id);
 }
