@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.Set;
+using QuizPlatform.Infrastructure.Services;
 
 namespace QuizPlatform.API.Controllers;
 
@@ -45,5 +46,12 @@ public class SetController : ControllerBase
     {
         bool isRemoved = await _setService.RemoveQuestionFromSetAsync(setId, questionId);
         return isRemoved ? Ok() : BadRequest();
+    }
+
+    [HttpDelete("delete/{id:int}")]
+    public async Task<ActionResult> DeleteSet(int id)
+    {
+        bool isDeleted = await _setService.DeleteByIdAsync(id);
+        return isDeleted ? Ok() : BadRequest();
     }
 }
