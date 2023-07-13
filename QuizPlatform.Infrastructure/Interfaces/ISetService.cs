@@ -1,5 +1,4 @@
-﻿using QuizPlatform.Infrastructure.Entities;
-using QuizPlatform.Infrastructure.Models.Set;
+﻿using QuizPlatform.Infrastructure.Models.Set;
 
 namespace QuizPlatform.Infrastructure.Interfaces;
 
