@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using System.Text;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.Infrastructure.Authentication;
 using QuizPlatform.Infrastructure.Entities;
@@ -13,30 +12,25 @@ namespace QuizPlatform.Infrastructure.Services;
 
 public class UserService : IUserService
 {
-    private readonly ApplicationDbContext _context;
     private readonly AuthenticationSettings _authenticationSettings;
     private readonly IMapper _mapper;
     private readonly ILoggingService _loggingService;
+    private readonly IUserRepository _userRepository;
 
-    public UserService(ApplicationDbContext context, AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService)
+    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository)
     {
-        _context = context;
         _mapper = mapper;
         _authenticationSettings = authenticationSettings;
         _loggingService = loggingService;
-    }
-
-    public async Task<List<User>?> GetAllAsync()
-    {
-        var users = await _context.Users.ToListAsync();
-        return users;
+        _userRepository = userRepository;
     }
 
     public async Task<string?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
-        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-        var user = await _context.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == dto.Email); //.Include(u => u.Role)
+        //var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        //var user = await _context.Users.AsNoTracking()
+            //.FirstOrDefaultAsync(u => u.Email == dto.Email); //.Include(u => u.Role)
+        var user = await _userRepository.GetUserByEmail(dto.Email!); // Include Role -> feature
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return null;
 
 
@@ -66,34 +60,33 @@ public class UserService : IUserService
         if (user is null) return false;
 
         user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-        await _context.Users.AddAsync(user);
-        await _context.SaveChangesAsync();
+        await _userRepository.AddNewUserAsync(user);
         return true;
     }
     
     public async Task<bool> ChangePassword(int id, ChangeUserPasswordDto user)
     {
-        var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        //var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var foundUser = await _userRepository.GetUserByIdAsync(id);
         if (foundUser is null) return false;
 
         if (!BCrypt.Net.BCrypt.Verify(user.OldPassword, foundUser.Password)) return false;
 
-        foundUser.Password = BCrypt.Net.BCrypt.HashPassword(user.NewPassword);
+        /* foundUser.Password = BCrypt.Net.BCrypt.HashPassword(user.NewPassword); */
 
-        await _context.SaveChangesAsync();
+        await _userRepository.EditPassword(foundUser, BCrypt.Net.BCrypt.HashPassword(user.NewPassword));
         return true;
     }
     
     public async Task<bool> CheckIfEmailExists(string email)
     {
-        User? user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
+        var user = await _userRepository.GetUserByEmail(email);
         return (user != null);
     }
 
     public async Task<bool> CheckIfUsernameExists(string username)
     {
-        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == username);
+        var user = await _userRepository.GetUserByUsername(username);
         return (user != null);
-    }
-    
+    }  
 }

@@ -5,7 +5,6 @@ namespace QuizPlatform.Infrastructure.Interfaces;
 
 public interface IUserService
 {
-    Task<List<User>?> GetAllAsync();
     Task<string?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto);
     Task<bool> RegisterUserAsync(UserRegisterDto dto);
     Task<bool> ChangePassword(int id, ChangeUserPasswordDto user);

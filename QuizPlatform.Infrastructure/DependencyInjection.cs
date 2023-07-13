@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using QuizPlatform.Infrastructure.Interfaces;
+using QuizPlatform.Infrastructure.Repositories;
 using QuizPlatform.Infrastructure.Services;
 
 namespace QuizPlatform.Infrastructure
@@ -8,6 +9,8 @@ namespace QuizPlatform.Infrastructure
     {
         public static void AddInfrastructure(this IServiceCollection services)
         {
+            services.AddScoped<IUserRepository, UserRepository>();
+
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoggingService, LoggingService>();
             services.AddScoped<IQuestionService, QuestionService>();
@@ -17,8 +20,7 @@ namespace QuizPlatform.Infrastructure
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             // Seeder
-            services.AddScoped<Seeder>();
+            //services.AddScoped<Seeder>();
         }
-
     }
 }

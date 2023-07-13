@@ -22,15 +22,6 @@ public class UserController : ControllerBase
         _changeUserPasswordValidator = changeUserPasswordValidator;
     }
     
-
-    [HttpGet("getAll")]
-    public async Task<ActionResult> GetAll()
-    {
-        var users = await _userService.GetAllAsync();
-        if (users is null) return NoContent();
-        return Ok(users);
-    }
-    
     [HttpPost("login")]
     public async Task<ActionResult> Login(UserLoginDto dto)
     {
