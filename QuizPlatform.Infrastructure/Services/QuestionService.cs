@@ -29,19 +29,30 @@ public class QuestionService : IQuestionService
     {
         var question = _mapper.Map<Question>(createQuestionDto);
         question.QuestionType = await _questionRepository.GetQuestionTypeAsync(createQuestionDto.QuestionType);
-        return await _questionRepository.AddNewQuestionAsync(question);
+        await _questionRepository.InsertQuestionAsync(question);
+        return await _questionRepository.SaveAsync();
     }
 
     public async Task<bool> ModifyQuestion(int id, CreateQuestionDto createQuestionDto)
     {
-        var editedQuestion = _mapper.Map<Question>(createQuestionDto);
-        editedQuestion.QuestionType = await _questionRepository.GetQuestionTypeAsync(createQuestionDto.QuestionType);
+        var question = await _questionRepository.GetQuestionByIdAsync(id, false);
+        if (question is null) return false;
 
-       return await _questionRepository.ModifyQuestion(id, editedQuestion, _mapper.Map<ICollection<QuestionAnswer>>(createQuestionDto.Answers));
+        question.Content = createQuestionDto.Question;
+        question.QuestionType = await _questionRepository.GetQuestionTypeAsync(createQuestionDto.QuestionType);
+        question.Answers = _mapper.Map<ICollection<QuestionAnswer>>(createQuestionDto.Answers);
+
+        _questionRepository.UpdateQuestion(question);
+        return await _questionRepository.SaveAsync();
     }
 
     public async Task<bool> DeleteByIdAsync(int id)
     {
-        return await _questionRepository.MarkQuestionAsDeleted(id);
+        var question = await _questionRepository.GetQuestionByIdAsync(id);
+        if (question is null) return false;
+        question.IsDeleted = true;
+        _questionRepository.UpdateQuestion(question);
+
+        return await _questionRepository.SaveAsync();
     }
 }

@@ -13,42 +13,28 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Question?> GetQuestionByIdAsync(int id)
+        public async Task<Question?> GetQuestionByIdAsync(int id, bool readOnly = true)
         {
-            var question = await _context.Questions.AsNoTracking()
+            if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            var question = await _context.Questions
             .Include(e => e.Answers)
             .FirstOrDefaultAsync(e => e.Id == id);
 
             return question;
         }
 
-        public async Task<bool> MarkQuestionAsDeleted(int id)
-        {
-            var question = await _context.Questions.FirstOrDefaultAsync(e => e.Id == id);
-            if (question is null) return false;
-            question.IsDeleted = true;
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<bool> AddNewQuestionAsync(Question question)
+        public async Task InsertQuestionAsync(Question question)
         {
             await _context.Questions.AddAsync(question);
-            return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> ModifyQuestion(int id, Question question, ICollection<QuestionAnswer> answers)
+        public void UpdateQuestion(Question question)
         {
-            var questionEntity = await _context.Questions.Include(e => e.Answers).FirstOrDefaultAsync(e => e.Id == id);
-            if (questionEntity is null) return false;
+            _context.Entry(question).State = EntityState.Modified;
+        }
 
-            questionEntity.Content = question.Content;
-            
-            questionEntity.QuestionType = question.QuestionType;
-            if (questionEntity.Answers is not null)
-                _context.Answers.RemoveRange(questionEntity.Answers);
-
-            questionEntity.Answers = answers;
-
+        public async Task<bool> SaveAsync()
+        {
             return await _context.SaveChangesAsync() > 0;
         }
 
