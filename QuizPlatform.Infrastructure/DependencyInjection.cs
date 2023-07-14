@@ -11,6 +11,7 @@ namespace QuizPlatform.Infrastructure
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<ISetRepository, SetRepository>();
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoggingService, LoggingService>();

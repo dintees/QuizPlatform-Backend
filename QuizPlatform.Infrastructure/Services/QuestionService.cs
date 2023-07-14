@@ -40,6 +40,8 @@ public class QuestionService : IQuestionService
 
         question.Content = createQuestionDto.Question;
         question.QuestionType = await _questionRepository.GetQuestionTypeAsync(createQuestionDto.QuestionType);
+        if (question.Answers is not null)
+            _questionRepository.DeleteAnswers(question.Answers);
         question.Answers = _mapper.Map<ICollection<QuestionAnswer>>(createQuestionDto.Answers);
 
         _questionRepository.UpdateQuestion(question);

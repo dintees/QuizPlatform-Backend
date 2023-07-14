@@ -9,5 +9,6 @@ namespace QuizPlatform.Infrastructure.Interfaces
         Task InsertQuestionAsync(Question question);
         Task<bool> SaveAsync();
         void UpdateQuestion(Question question);
+        void DeleteAnswers(ICollection<QuestionAnswer> answers);
     }
 }

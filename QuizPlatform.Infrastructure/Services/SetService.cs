@@ -8,20 +8,20 @@ namespace QuizPlatform.Infrastructure.Services;
 
 public class SetService : ISetService
 {
-    private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
+    private readonly ISetRepository _setRepository;
+    private readonly IQuestionRepository _questionRepository;
 
-    public SetService(ApplicationDbContext context, IMapper mapper)
+    public SetService(IMapper mapper, ISetRepository setRepository, IQuestionRepository questionRepository)
     {
-        _context = context;
         _mapper = mapper;
+        _setRepository = setRepository;
+        _questionRepository = questionRepository;
     }
     
     public async Task<SetDto?> GetByIdAsync(int id)
     {
-        var set = await _context.Sets.AsNoTracking()//.AsSplitQuery()
-            .Include(e => e.Questions)!.ThenInclude(r => r.Question).ThenInclude(e => e!.Answers)
-            .FirstOrDefaultAsync(s => s.Id == id);
+        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id);
         if (set is null) return null;
         
         var setDto = _mapper.Map<SetDto>(set);
@@ -31,15 +31,14 @@ public class SetService : ISetService
     public async Task<bool> CreateNewSetAsync(CreateSetDto dto)
     {
         var newSet = _mapper.Map<Set>(dto);
-        await _context.Sets.AddAsync(newSet);
-        bool isCreated = await _context.SaveChangesAsync() > 0;
-        return isCreated;
+        await _setRepository.InsertSetAsync(newSet);
+        return await _setRepository.SaveAsync();
     }
 
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)
     {
-        var set = await _context.Sets.FirstOrDefaultAsync(e => e.Id == setId);
-        var question = await _context.Questions.FirstOrDefaultAsync(e => e.Id == questionId);
+        var set = await _setRepository.GetSetByIdAsync(setId, false);
+        var question = await _questionRepository.GetQuestionByIdAsync(questionId, false);
         
         if (set is null || question is null) return false;
 
@@ -53,9 +52,8 @@ public class SetService : ISetService
 
         try
         {
-            await _context.QuestionSets.AddAsync(questionSet);
-            bool added = await _context.SaveChangesAsync() > 0;
-            return added;
+            await _setRepository.InsertQuestionSetAsync(questionSet);
+            return await _setRepository.SaveAsync();
         }
         catch (DbUpdateException)
         {
@@ -65,19 +63,19 @@ public class SetService : ISetService
 
     public async Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId)
     {
-        var question = await _context.QuestionSets.FirstOrDefaultAsync(r => r.QuestionId == questionId && r.SetId == setId);
-        if (question is null) return false;
-        _context.QuestionSets.Remove(question);
-        bool isRemoved = await _context.SaveChangesAsync() > 0;
-        return isRemoved;
+        var questionSet = await _setRepository.GetQuestionSetBySetIdAndQuestionId(setId, questionId);
+        if (questionSet is null) return false;
+
+        _setRepository.RemoveQuestionFromSet(questionSet);
+        return await _setRepository.SaveAsync();
     }
 
     public async Task<bool> DeleteByIdAsync(int id)
     {
-        var set = await _context.Sets.FirstOrDefaultAsync(e => e.Id == id);
+        var set = await _setRepository.GetSetByIdAsync(id);
         if (set is null) return false;
         set.IsDeleted = true;
-        bool isRemoved = await _context.SaveChangesAsync() > 0;
-        return isRemoved;
+        _setRepository.UpdateSet(set);
+        return await _setRepository.SaveAsync();
     }
 }

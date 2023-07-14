@@ -42,5 +42,10 @@ namespace QuizPlatform.Infrastructure.Repositories
         {
             return await _context.QuestionTypes.FirstOrDefaultAsync(e => e.Name == questionTypeName);
         }
+
+        public void DeleteAnswers(ICollection<QuestionAnswer> answers)
+        {
+            _context.Answers.RemoveRange(answers);
+        }
     }
 }
