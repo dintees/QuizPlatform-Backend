@@ -13,10 +13,9 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<bool> AddNewUserAsync(User user)
+        public async Task AddNewUserAsync(User user)
         {
             await _context.Users.AddAsync(user);
-            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<User?> GetUserByEmail(string email)
@@ -25,22 +24,25 @@ namespace QuizPlatform.Infrastructure.Repositories
                 .FirstOrDefaultAsync(e => e.Email == email);
         }
 
-        public async Task<User?> GetUserByUsername(string username)
+        public async Task<User?> GetUserAsync(string username, string email)
         {
-            return await _context.Users.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Username == username);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Username == username || e.Email == email);
         }
 
         public async Task<User?> GetUserByIdAsync(int id)
         {
-            return await _context.Users
+            return await _context.Users.AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public async Task EditPassword(User user, string newPassword)
+        public void UpdateUser(User user)
         {
-            user.Password = newPassword;
-            await _context.SaveChangesAsync();
+            _context.Entry(user).State = EntityState.Modified;
+        }
+
+        public async Task<bool> SaveAsync()
+        {
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

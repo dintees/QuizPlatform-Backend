@@ -2,9 +2,11 @@
 using System.Security.Claims;
 using System.Text;
 using AutoMapper;
+using FluentValidation;
 using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.Infrastructure.Authentication;
 using QuizPlatform.Infrastructure.Entities;
+using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.User;
 
@@ -16,21 +18,22 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly ILoggingService _loggingService;
     private readonly IUserRepository _userRepository;
+    private readonly IValidator<UserRegisterDto> _userRegisterValidator;
+    private readonly IValidator<ChangeUserPasswordDto> _changeUserPasswordValidator;
 
-    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository)
+    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
     {
         _mapper = mapper;
         _authenticationSettings = authenticationSettings;
         _loggingService = loggingService;
         _userRepository = userRepository;
+        _userRegisterValidator = userRegisterValidator;
+        _changeUserPasswordValidator = changeUserPasswordValidator;
     }
 
     public async Task<string?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
-        //var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-        //var user = await _context.Users.AsNoTracking()
-            //.FirstOrDefaultAsync(u => u.Email == dto.Email); //.Include(u => u.Role)
-        var user = await _userRepository.GetUserByEmail(dto.Email!); // Include Role -> feature
+        var user = await _userRepository.GetUserByEmail(dto.Email!); // Include Role
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return null;
 
 
@@ -54,39 +57,34 @@ public class UserService : IUserService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<bool> RegisterUserAsync(UserRegisterDto dto)
+    public async Task<string?> RegisterUserAsync(UserRegisterDto dto)
     {
+        var validationResult = await _userRegisterValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid) return validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+
+        if (await _userRepository.GetUserAsync(dto.Username!, dto.Email!) != null) return UserErrorMessages.UserAlreadyExistsError;
+
         var user = _mapper.Map<User>(dto);
-        if (user is null) return false;
+        if (user is null) return GeneralErrorMessages.GeneralError;
 
         user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
         await _userRepository.AddNewUserAsync(user);
-        return true;
+        return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
     
-    public async Task<bool> ChangePassword(int id, ChangeUserPasswordDto user)
+    public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
     {
-        //var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
         var foundUser = await _userRepository.GetUserByIdAsync(id);
-        if (foundUser is null) return false;
+        if (foundUser is null) return UserErrorMessages.PersonWithThisIdDoesNotExist;
 
-        if (!BCrypt.Net.BCrypt.Verify(user.OldPassword, foundUser.Password)) return false;
+        var validationResult = await _changeUserPasswordValidator.ValidateAsync(user);
+        if (!validationResult.IsValid) return validationResult.Errors.FirstOrDefault()?.ErrorMessage;
 
-        /* foundUser.Password = BCrypt.Net.BCrypt.HashPassword(user.NewPassword); */
+        if (!BCrypt.Net.BCrypt.Verify(user.OldPassword, foundUser.Password)) return UserErrorMessages.CurrentPasswordIsIncorrect;
 
-        await _userRepository.EditPassword(foundUser, BCrypt.Net.BCrypt.HashPassword(user.NewPassword));
-        return true;
+        foundUser.Password = BCrypt.Net.BCrypt.HashPassword(user.NewPassword);
+
+        _userRepository.UpdateUser(foundUser);
+        return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
-    
-    public async Task<bool> CheckIfEmailExists(string email)
-    {
-        var user = await _userRepository.GetUserByEmail(email);
-        return (user != null);
-    }
-
-    public async Task<bool> CheckIfUsernameExists(string username)
-    {
-        var user = await _userRepository.GetUserByUsername(username);
-        return (user != null);
-    }  
 }

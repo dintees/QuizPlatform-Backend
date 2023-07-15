@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizPlatform.API", "QuizPlatform.API\QuizPlatform.API.csproj", "{ED54483E-6A56-4971-BE77-26996ABAC1C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuizPlatform.API", "QuizPlatform.API\QuizPlatform.API.csproj", "{ED54483E-6A56-4971-BE77-26996ABAC1C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizPlatform.Infrastructure", "QuizPlatform.Infrastructure\QuizPlatform.Infrastructure.csproj", "{43ACF7D7-4980-401B-8B3A-F16999F12247}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuizPlatform.Infrastructure", "QuizPlatform.Infrastructure\QuizPlatform.Infrastructure.csproj", "{43ACF7D7-4980-401B-8B3A-F16999F12247}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizPlatform.Tests", "QuizPlatform.Tests\QuizPlatform.Tests.csproj", "{68297BCB-62D0-4F8F-BF24-1D33BD2C72D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{43ACF7D7-4980-401B-8B3A-F16999F12247}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43ACF7D7-4980-401B-8B3A-F16999F12247}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43ACF7D7-4980-401B-8B3A-F16999F12247}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68297BCB-62D0-4F8F-BF24-1D33BD2C72D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68297BCB-62D0-4F8F-BF24-1D33BD2C72D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68297BCB-62D0-4F8F-BF24-1D33BD2C72D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68297BCB-62D0-4F8F-BF24-1D33BD2C72D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Models.User;
 
 namespace QuizPlatform.API.Validation;
@@ -7,9 +8,9 @@ public class ChangeUserPasswordValidator : AbstractValidator<ChangeUserPasswordD
 {
     public ChangeUserPasswordValidator()
     {
-        RuleFor(u => u.NewPassword).NotEmpty().WithMessage("Password could not be empty")
-            .MinimumLength(8).WithMessage("Passwords must be at least 8 characters long");
+        RuleFor(u => u.NewPassword).NotEmpty().WithMessage(UserErrorMessages.EmptyPassword)
+            .MinimumLength(8).WithMessage(UserErrorMessages.TooShortPassword);
         RuleFor(u => u.NewPasswordConfirmation).Equal(u => u.NewPassword)
-            .WithMessage("The given passwords are not the same");
+            .WithMessage(UserErrorMessages.NotTheSamePasswords);
     }
 }

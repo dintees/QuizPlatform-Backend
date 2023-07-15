@@ -6,9 +6,9 @@ using QuizPlatform.Infrastructure.Models.Set;
 
 namespace QuizPlatform.Infrastructure.Profiles;
 
-public class AutoMapper : Profile
+public class MainProfile : Profile
 {
-    public AutoMapper()
+    public MainProfile()
     {
         CreateMap<UserRegisterDto, User>();
 

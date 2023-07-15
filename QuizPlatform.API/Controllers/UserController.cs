@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.User;
 
@@ -12,14 +13,10 @@ namespace QuizPlatform.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
-    private readonly IValidator<UserRegisterDto> _userRegisterValidator;
-    private readonly IValidator<ChangeUserPasswordDto> _changeUserPasswordValidator;
 
-    public UserController(IUserService userService, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
+    public UserController(IUserService userService)
     {
         _userService = userService;
-        _userRegisterValidator = userRegisterValidator;
-        _changeUserPasswordValidator = changeUserPasswordValidator;
     }
     
     [HttpPost("login")]
@@ -33,32 +30,29 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult> Register(UserRegisterDto dto)
     {
-        var validator = await _userRegisterValidator.ValidateAsync(dto);
-        if (!validator.IsValid) { return BadRequest(validator); }
-
-        bool isRegistered = await _userService.RegisterUserAsync(dto);
-        if (isRegistered)
+        var registrationError = await _userService.RegisterUserAsync(dto);
+        if (registrationError is null)
         {
             return await Login(new UserLoginDto { Email = dto.Email, Password = dto.Password });
         }
-        return BadRequest();
+        return BadRequest(registrationError);
     }
     
     [Authorize]
     [HttpPost("changePassword")]
     public async Task<ActionResult> ChangePassword(ChangeUserPasswordDto dto)
     {
-        var validatorResults = await _changeUserPasswordValidator.ValidateAsync(dto);
-        if (!validatorResults.IsValid) { return BadRequest(validatorResults); }
-
         var identity = HttpContext.User.Identity as ClaimsIdentity;
-        if (identity == null) return BadRequest();
+        if (identity == null) return BadRequest(UserErrorMessages.PersonWithThisIdDoesNotExist);
+
         var claims = identity.Claims;
 
         var userId = claims.FirstOrDefault(e => e.Type == ClaimTypes.NameIdentifier)?.Value;
 
-        if (userId != null && await _userService.ChangePassword(int.Parse(userId), dto)) return Ok();
-        
-        return BadRequest();
+        if (userId == null) return BadRequest();
+        var changePasswordResult = await _userService.ChangePasswordAsync(int.Parse(userId), dto);
+
+        if (changePasswordResult is null) return Ok();
+        return BadRequest(changePasswordResult);
     }
 }
