@@ -12,7 +12,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserSession> UserSessions { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionAnswer> Answers { get; set; }
-    public DbSet<QuestionType> QuestionTypes { get; set; }
     public DbSet<Set> Sets { get; set; }
     public DbSet<QuestionSet> QuestionSets { get; set; }
 

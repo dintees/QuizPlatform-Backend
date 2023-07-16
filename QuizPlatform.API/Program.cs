@@ -32,9 +32,12 @@ builder.Services.AddInfrastructure();
 // Middlewares
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 
+
 // Fluent Validation
 builder.Services.AddScoped<IValidator<UserRegisterDto>, UserRegisterValidator>();
 builder.Services.AddScoped<IValidator<ChangeUserPasswordDto>, ChangeUserPasswordValidator>();
+builder.Services.AddScoped<IValidator<Question>, QuestionValidator>();
+
 
 // JWT settings
 var authenticationSettings = new AuthenticationSettings();

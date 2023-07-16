@@ -26,18 +26,22 @@ public class QuestionController : ControllerBase
     [HttpPost("create")]
     public async Task<ActionResult> CreateQuestion(CreateQuestionDto createQuestionDto)
     {
-        bool isCreated = await _questionService.CreateQuestionAsync(createQuestionDto);
-        if (!isCreated) return BadRequest();
+        var result = await _questionService.CreateQuestionAsync(createQuestionDto);
+        if (result is null)
+        {
+            return Ok();
+        }
 
-        return Ok();
+        return BadRequest(result);
     }
 
     [HttpPut("edit/{id:int}")]
     public async Task<ActionResult> ModifyQuestion(int id, CreateQuestionDto createQuestionDto)
     {
-        bool isModified = await _questionService.ModifyQuestion(id, createQuestionDto);
-        if (isModified == false) return BadRequest();
-        return Ok();
+        var modificationResult = await _questionService.ModifyQuestionAsync(id, createQuestionDto);
+        if (modificationResult is null)
+            return Ok();
+        return BadRequest(modificationResult);
     }
 
     [HttpDelete("delete/{id:int}")]

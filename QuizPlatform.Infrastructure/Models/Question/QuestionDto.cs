@@ -1,4 +1,4 @@
-﻿using QuizPlatform.Infrastructure.Entities;
+﻿using QuizPlatform.Infrastructure.Enums;
 
 namespace QuizPlatform.Infrastructure.Models.Question;
 

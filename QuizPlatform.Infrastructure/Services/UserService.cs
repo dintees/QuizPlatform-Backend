@@ -50,10 +50,10 @@ public class UserService : IUserService
         var expires = DateTime.Now.AddDays(_authenticationSettings.ExpiresDays);
         var token = new JwtSecurityToken(_authenticationSettings.Issuer, _authenticationSettings.Issuer, claims, expires: expires, signingCredentials: credentials);
         var tokenHandler = new JwtSecurityTokenHandler();
-        
+
         // log information to UserSessions table
         await _loggingService.LogLoginInformation(user.Id);
-        
+
         return tokenHandler.WriteToken(token);
     }
 
@@ -71,7 +71,7 @@ public class UserService : IUserService
         await _userRepository.AddNewUserAsync(user);
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
-    
+
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
     {
         var foundUser = await _userRepository.GetUserByIdAsync(id);

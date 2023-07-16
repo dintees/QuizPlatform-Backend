@@ -20,9 +20,6 @@ namespace QuizPlatform.Infrastructure
 
             // AutoMapper
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-            // Seeder
-            //services.AddScoped<Seeder>();
         }
     }
 }
