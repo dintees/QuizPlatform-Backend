@@ -10,7 +10,7 @@ namespace QuizPlatform.Infrastructure.Interfaces
         void UpdateSet(Set set);
         Task<bool> SaveAsync();
         Task InsertQuestionSetAsync(QuestionSet questionSet);
-        Task<QuestionSet?> GetQuestionSetBySetIdAndQuestionId(int setId, int questionId);
+        Task<QuestionSet?> GetQuestionSetBySetIdAndQuestionIdAsync(int setId, int questionId);
         void RemoveQuestionFromSet(QuestionSet questionSet);
     }
 }

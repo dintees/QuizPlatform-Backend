@@ -203,7 +203,21 @@ namespace QuizPlatform.Tests
         }
 
 
-        // TODO Deleting question tests
+        [Fact]
+        public async Task DeleteByIdAsync_ForInvalidId_ReturnsFalse()
+        {
+            var isDeleted = await _service.DeleteByIdAsync(-2);
+
+            Assert.False(isDeleted);
+        }
+
+        [Fact]
+        public async Task DeleteByIdAsync_ForValid_ReturnsTrueAndChangeQuestionFlag()
+        {
+            var isDeleted = await _service.DeleteByIdAsync(2);
+
+            Assert.True(isDeleted);
+        }
 
 
 

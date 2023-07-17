@@ -28,8 +28,9 @@ public class SetController : ControllerBase
     [HttpPost("create")]
     public async Task<ActionResult> CreateSet(CreateSetDto setDto)
     {
-        bool isCreated = await _setService.CreateNewSetAsync(setDto);
-        return isCreated ? Ok() : BadRequest();
+        var createdSetResult = await _setService.CreateNewSetAsync(setDto);
+        if (createdSetResult.Success) return Ok(createdSetResult.Value);
+        return BadRequest(createdSetResult.ErrorMessage);
     }
 
     [HttpPost("addQuestion/{setId:int}")]

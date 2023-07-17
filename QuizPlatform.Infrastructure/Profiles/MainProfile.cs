@@ -27,6 +27,8 @@ public class MainProfile : Profile
 
         CreateMap<QuestionSet, QuestionDto>()
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Question!.Content))
+            .ForMember(m => m.Id, o => o.MapFrom(s => s.Question!.Id))
+            .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.Question!.QuestionType))
             .ForMember(m => m.Answers, o => o.MapFrom(s => s.Question!.Answers!.Select(e => e.Content)));
     }
 }

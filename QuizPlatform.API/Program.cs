@@ -37,6 +37,7 @@ builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<IValidator<UserRegisterDto>, UserRegisterValidator>();
 builder.Services.AddScoped<IValidator<ChangeUserPasswordDto>, ChangeUserPasswordValidator>();
 builder.Services.AddScoped<IValidator<Question>, QuestionValidator>();
+builder.Services.AddScoped<IValidator<Set>, SetValidator>();
 
 
 // JWT settings
