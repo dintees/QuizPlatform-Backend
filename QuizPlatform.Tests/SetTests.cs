@@ -28,6 +28,14 @@ namespace QuizPlatform.Tests
             var mapper = mapperConfiguration.CreateMapper();
 
             var questionRepositoryMock = new Mock<IQuestionRepository>();
+            questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(2, It.IsAny<bool>())).ReturnsAsync(new Question
+            {
+                Id = 2,
+                Content = "Sample question",
+                QuestionType = QuestionTypeName.ShortAnswer,
+                IsDeleted = false,
+                Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = "a", Correct = true } }
+            });
 
             IValidator<Set> setValidator = new SetValidator();
 
@@ -85,11 +93,89 @@ namespace QuizPlatform.Tests
             Assert.Equal(title, foundSet?.Title);
         }
 
-        // TODO AddQuestionToSetAsync
+        [Fact]
+        public async Task ModifySetPropertiesAsync_ForEmptyTitleAttribute_ReturnsErrorMessage()
+        {
+            var setOptions = new SetDto { Description = "New description" };
 
-        // TODO RemoveQuestionFromSetAsync
+            var result = await _service.ModifySetPropertiesAsync(2, setOptions);
+            var foundSet = await _service.GetByIdAsync(2);
 
-        // TODO DeleteByIdAsync
+            Assert.Equal(SetErrorMessages.EmptySetTitle, result);
+            Assert.Equal("Set 2", foundSet?.Title);
+        }
+
+        [Fact]
+        public async Task ModifySetPropertiesAsync_ForCorrectSetObject_ReturnsNull()
+        {
+            var setOptions = new SetDto { Title = "New title", Description = "New description" };
+
+            var result = await _service.ModifySetPropertiesAsync(2, setOptions);
+            var foundSet = await _service.GetByIdAsync(2);
+
+            Assert.Null(result);
+            Assert.Equal("New title", foundSet?.Title);
+        }
+
+        [Theory]
+        [InlineData(1, 10)]
+        [InlineData(10, 2)]
+        [InlineData(10, 10)]
+        public async Task AddQuestionToSetAsync_ForInvalidQuestionAndSetId_ReturnsFalse(int setId, int questionId)
+        {
+            var result = await _service.AddQuestionToSetAsync(setId, questionId);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task AddQuestionToSetAsync_ForValidIds_ReturnsTrueAndAddQuestionToSet()
+        {
+            var result = await _service.AddQuestionToSetAsync(2, 2);
+
+            var questionCount = await _service.GetByIdAsync(2);
+
+            Assert.True(result);
+            Assert.Equal(1, questionCount?.Questions?.Count);
+        }
+
+        [Theory]
+        [InlineData(1, 10)]
+        [InlineData(10, 2)]
+        [InlineData(10, 10)]
+        public async Task RemoveQuestionFromSetAsync_ForInvalidIds_ReturnsFalse(int setId, int questionId)
+        {
+            var result = await _service.RemoveQuestionFromSetAsync(setId, questionId);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task RemoveQuestionToSetAsync_ForValidIds_ReturnsTrueAndAddRemoveQuestionFromSet()
+        {
+            var result = await _service.RemoveQuestionFromSetAsync(1, 3);
+
+            var questionCount = await _service.GetByIdAsync(1);
+
+            Assert.True(result);
+            Assert.Equal(1, questionCount?.Questions?.Count);
+        }
+
+        [Fact]
+        public async Task DeleteByIdAsync_ForInvalidId_ReturnsFalse()
+        {
+            var isDeleted = await _service.DeleteByIdAsync(-2);
+
+            Assert.False(isDeleted);
+        }
+
+        [Fact]
+        public async Task DeleteByIdAsync_ForValid_ReturnsTrueAndChangeQuestionFlag()
+        {
+            var isDeleted = await _service.DeleteByIdAsync(2);
+
+            Assert.True(isDeleted);
+        }
 
 
         private Mock<ISetRepository> GetSetRepositoryMock(List<Set> sets)
@@ -97,12 +183,36 @@ namespace QuizPlatform.Tests
             var mock = new Mock<ISetRepository>();
             mock.Setup(x => x.GetSetWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
                 .ReturnsAsync((int id, bool readOnly) => sets.FirstOrDefault(e => e.Id == id));
+            mock.Setup(x => x.GetSetByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
+                .ReturnsAsync((int id, bool readOnly) => sets.FirstOrDefault(e => e.Id == id));
             mock.Setup(x => x.InsertSetAsync(It.IsAny<Set>()))
                 .Callback((Set set) =>
                 {
                     set.Id = 3;
                     sets.Add(set);
                 });
+            mock.Setup(x => x.InsertQuestionSetAsync(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
+            {
+                var set = sets.FirstOrDefault(e => e.Id == questionSet?.Set?.Id);
+                if (set?.Questions is null) set!.Questions = new List<QuestionSet>();
+                set?.Questions?.Add(questionSet);
+            });
+            mock.Setup(x => x.GetQuestionSetBySetIdAndQuestionIdAsync(It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync((int setId, int questionId) =>
+                {
+                    var set = sets.FirstOrDefault(e => e.Id == setId);
+                    if (set is null) return null;
+                    var question = set?.Questions!.FirstOrDefault(e => e.Question!.Id == questionId);
+                    if (question is null || question!.Question is null) return null;
+                    return new QuestionSet { QuestionId = questionId, SetId = setId };
+                });
+            mock.Setup(x => x.RemoveQuestionFromSet(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
+            {
+                var set = sets.FirstOrDefault(e => e.Id == questionSet?.SetId);
+                var qq = set?.Questions!.FirstOrDefault(e => e.Question!.Id == questionSet.QuestionId);
+                set!.Questions?.Remove(qq!);
+
+            });
             mock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
 
             return mock;
@@ -124,6 +234,7 @@ namespace QuizPlatform.Tests
                         {
                             Question = new Question
                             {
+                                Id = 1,
                                 Content = "Question 1 set 1",
                                 QuestionType = QuestionTypeName.ShortAnswer,
                                 Answers = new List<QuestionAnswer> {
@@ -150,6 +261,7 @@ namespace QuizPlatform.Tests
                         {
                             Question = new Question
                             {
+                                Id = 3,
                                 Content = "Question 2 set 1",
                                 QuestionType = QuestionTypeName.TrueFalse,
                                 Answers = new List<QuestionAnswer> {

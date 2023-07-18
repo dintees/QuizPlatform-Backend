@@ -7,6 +7,7 @@ public interface ISetService
 {
     Task<SetDto?> GetByIdAsync(int id);
     Task<Result<int>> CreateNewSetAsync(CreateSetDto dto);
+    Task<string?> ModifySetPropertiesAsync(int id,SetDto setDto);
     Task<bool> AddQuestionToSetAsync(int setId, int questionId);
     Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId);
     Task<bool> DeleteByIdAsync(int id);

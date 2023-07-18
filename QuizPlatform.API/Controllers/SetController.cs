@@ -42,6 +42,15 @@ public class SetController : ControllerBase
         return BadRequest();
     }
 
+    [HttpPut("edit/{id}")]
+    public async Task<ActionResult> EditSetProperties(int id, SetDto setDto)
+    {
+        var result = await _setService.ModifySetPropertiesAsync(id, setDto);
+        if (result is null) return Ok();
+        return BadRequest(result);
+    }
+
+
     [HttpDelete("removeQuestion/{setId:int}")]
     public async Task<ActionResult> RemoveQuestionFromSet(int setId, [FromBody] int questionId)
     {

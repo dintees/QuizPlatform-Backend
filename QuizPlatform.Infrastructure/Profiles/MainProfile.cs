@@ -23,6 +23,7 @@ public class MainProfile : Profile
             .ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
 
         CreateMap<Set, SetDto>();
+        CreateMap<SetDto, Set>();
         CreateMap<CreateSetDto, Set>();
 
         CreateMap<QuestionSet, QuestionDto>()
