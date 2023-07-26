@@ -39,8 +39,8 @@ public class QuestionController : ControllerBase
     public async Task<ActionResult> ModifyQuestion(int id, CreateQuestionDto createQuestionDto)
     {
         var modificationResult = await _questionService.ModifyQuestionAsync(id, createQuestionDto);
-        if (modificationResult is null)
-            return Ok();
+        if (modificationResult.Success)
+            return Ok(modificationResult);
         return BadRequest(modificationResult);
     }
 

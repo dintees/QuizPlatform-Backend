@@ -58,7 +58,7 @@ namespace QuizPlatform.Tests
 
             Assert.NotNull(set);
             Assert.Equal(2, questions!.Count);
-            Assert.Equal("Question 1 set 1", questions![0].Question);
+            Assert.Equal("Question 1 set 1", questions[0].Question);
         }
 
         [Fact]
@@ -101,19 +101,22 @@ namespace QuizPlatform.Tests
             var result = await _service.ModifySetPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
 
-            Assert.Equal(SetErrorMessages.EmptySetTitle, result);
+            Assert.False(result.Success);
+            Assert.Equal(SetErrorMessages.EmptySetTitle, result.ErrorMessage);
             Assert.Equal("Set 2", foundSet?.Title);
         }
 
         [Fact]
-        public async Task ModifySetPropertiesAsync_ForCorrectSetObject_ReturnsNull()
+        public async Task ModifySetPropertiesAsync_ForCorrectSetObject_ReturnsSuccessFalseResult()
         {
             var setOptions = new SetDto { Title = "New title", Description = "New description" };
 
             var result = await _service.ModifySetPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
 
-            Assert.Null(result);
+            Assert.True(result.Success);
+            Assert.Null(result.ErrorMessage);
+            Assert.Equal(2, result.Value);
             Assert.Equal("New title", foundSet?.Title);
         }
 
@@ -177,14 +180,13 @@ namespace QuizPlatform.Tests
             Assert.True(isDeleted);
         }
 
-
         private Mock<ISetRepository> GetSetRepositoryMock(List<Set> sets)
         {
             var mock = new Mock<ISetRepository>();
             mock.Setup(x => x.GetSetWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
-                .ReturnsAsync((int id, bool readOnly) => sets.FirstOrDefault(e => e.Id == id));
+                .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
             mock.Setup(x => x.GetSetByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
-                .ReturnsAsync((int id, bool readOnly) => sets.FirstOrDefault(e => e.Id == id));
+                .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
             mock.Setup(x => x.InsertSetAsync(It.IsAny<Set>()))
                 .Callback((Set set) =>
                 {
@@ -193,22 +195,22 @@ namespace QuizPlatform.Tests
                 });
             mock.Setup(x => x.InsertQuestionSetAsync(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
             {
-                var set = sets.FirstOrDefault(e => e.Id == questionSet?.Set?.Id);
+                var set = sets.FirstOrDefault(e => e.Id == questionSet.Set?.Id);
                 if (set?.Questions is null) set!.Questions = new List<QuestionSet>();
-                set?.Questions?.Add(questionSet);
+                set.Questions?.Add(questionSet);
             });
             mock.Setup(x => x.GetQuestionSetBySetIdAndQuestionIdAsync(It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync((int setId, int questionId) =>
                 {
                     var set = sets.FirstOrDefault(e => e.Id == setId);
                     if (set is null) return null;
-                    var question = set?.Questions!.FirstOrDefault(e => e.Question!.Id == questionId);
-                    if (question is null || question!.Question is null) return null;
+                    var question = set.Questions!.FirstOrDefault(e => e.Question!.Id == questionId);
+                    if (question is null || question.Question is null) return null;
                     return new QuestionSet { QuestionId = questionId, SetId = setId };
                 });
             mock.Setup(x => x.RemoveQuestionFromSet(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
             {
-                var set = sets.FirstOrDefault(e => e.Id == questionSet?.SetId);
+                var set = sets.FirstOrDefault(e => e.Id == questionSet.SetId);
                 var qq = set?.Questions!.FirstOrDefault(e => e.Question!.Id == questionSet.QuestionId);
                 set!.Questions?.Remove(qq!);
 

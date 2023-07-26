@@ -102,11 +102,11 @@ namespace QuizPlatform.Tests
             var result = await _service.CreateQuestionAsync(question);
 
             Assert.False(result.Success);
-            Assert.Equal(QuestionErrorMessages.WrongNumberOfAnswers, result.ErrorMessage);
+            Assert.Equal(QuestionErrorMessages.WrongNumberOfCorrectAnswers, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task CreateQuestionAsync_ForMoreThanOneCorrectAnswerInSingleChoiceType_ReturnsWrongNumberOfCorrectAnswersError()
+        public async Task CreateQuestionAsync_ForMoreThanOneCorrectAnswerInSingleChoiceType_ReturnsOneAnswerShouldBeCorrectError()
         {
             var question = new CreateQuestionDto
             {
@@ -164,7 +164,7 @@ namespace QuizPlatform.Tests
 
 
         [Fact]
-        public async Task ModifyQuestionAsync_ForInvalidParameters_ReturnsProperErrorMessage()
+        public async Task ModifyQuestionAsync_ForTwoCorrectAnswersInSingleAnswerQuestionMode_ReturnsResultWithProperErrorMessage()
         {
             var question = new CreateQuestionDto
             {
@@ -181,11 +181,12 @@ namespace QuizPlatform.Tests
             var result = await _service.ModifyQuestionAsync(2, question);
 
             //Assert.NotNull(result);
-            Assert.Equal(QuestionErrorMessages.WrongNumberOfAnswers, result);
+            Assert.False(result.Success);
+            Assert.Equal(QuestionErrorMessages.WrongNumberOfCorrectAnswers, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task ModifyQuestionAsync_ForValidQuestionAndAnswers_ReturnsNullAndModifyQuestion()
+        public async Task ModifyQuestionAsync_ForValidQuestionAndAnswers_ReturnsSuccessWithIdAndModifyQuestion()
         {
             var question = new CreateQuestionDto
             {
@@ -197,7 +198,8 @@ namespace QuizPlatform.Tests
             var result = await _service.ModifyQuestionAsync(2, question);
             var foundQuestion = await _service.GetByIdAsync(2);
 
-            Assert.Null(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Value);
             Assert.NotNull(foundQuestion);
             Assert.Equal("Edited question", foundQuestion.Question);
         }

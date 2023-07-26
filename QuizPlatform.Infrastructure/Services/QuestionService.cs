@@ -40,17 +40,18 @@ public class QuestionService : IQuestionService
         return await _questionRepository.SaveAsync() ? new Result<int> { Success = true, Value = question.Id } : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<string?> ModifyQuestionAsync(int id, CreateQuestionDto createQuestionDto)
+    public async Task<Result<int>> ModifyQuestionAsync(int id, CreateQuestionDto createQuestionDto)
     {
         var question = await _questionRepository.GetQuestionByIdAsync(id, false);
-        if (question is null) 
-            return QuestionErrorMessages.QuestionDoesNotExist;
+        if (question is null)
+            return new Result<int>() { Success = false, ErrorMessage = QuestionErrorMessages.QuestionDoesNotExist };
 
         var newQuestion = _mapper.Map<Question>(createQuestionDto);
 
-        var validationReuslt = await _questionValidator.ValidateAsync(newQuestion);
-        if (!validationReuslt.IsValid) 
-            return validationReuslt.Errors.FirstOrDefault()?.ErrorMessage;
+        var validationResult = await _questionValidator.ValidateAsync(newQuestion);
+        if (!validationResult.IsValid)
+            return new Result<int>
+            { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         question.Content = createQuestionDto.Question;
         if (question.Answers is not null)
@@ -58,16 +59,18 @@ public class QuestionService : IQuestionService
         question.Answers = _mapper.Map<ICollection<QuestionAnswer>>(createQuestionDto.Answers);
 
         _questionRepository.UpdateQuestion(question);
-        return await _questionRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+        return await _questionRepository.SaveAsync()
+            ? new Result<int> { Success = true, Value = question.Id }
+            : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
     public async Task<bool> DeleteByIdAsync(int id)
-    {
-        var question = await _questionRepository.GetQuestionByIdAsync(id);
-        if (question is null) return false;
-        question.IsDeleted = true;
-        _questionRepository.UpdateQuestion(question);
+{
+    var question = await _questionRepository.GetQuestionByIdAsync(id);
+    if (question is null) return false;
+    question.IsDeleted = true;
+    _questionRepository.UpdateQuestion(question);
 
-        return await _questionRepository.SaveAsync();
-    }
+    return await _questionRepository.SaveAsync();
+}
 }

@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using AutoMapper;
+﻿using AutoMapper;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using QuizPlatform.Infrastructure.Entities;
@@ -46,21 +45,27 @@ public class SetService : ISetService
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<string?> ModifySetPropertiesAsync(int id, SetDto setDto)
+    public async Task<Result<int>> ModifySetPropertiesAsync(int id, SetDto setDto)
     {
         var set = _mapper.Map<Set>(setDto);
-        if (set is null) return GeneralErrorMessages.GeneralError;
+        if (set is null)
+            return new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
         var validationResult = await _setValidator.ValidateAsync(set);
-        if (!validationResult.IsValid) return validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+        if (!validationResult.IsValid)
+            return new Result<int>
+            { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         var setEntity = await _setRepository.GetSetByIdAsync(id);
-        if (setEntity is null) return SetErrorMessages.NotFound;
+        if (setEntity is null)
+            return new Result<int> { Success = false, ErrorMessage = SetErrorMessages.NotFound };
 
         setEntity.Title = set.Title;
         setEntity.Description = set.Description;
 
         _setRepository.UpdateSet(setEntity);
-        return await _setRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+        return await _setRepository.SaveAsync()
+            ? new Result<int> { Success = true, Value = setEntity.Id }
+            : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)

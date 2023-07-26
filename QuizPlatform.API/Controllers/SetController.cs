@@ -29,7 +29,7 @@ public class SetController : ControllerBase
     public async Task<ActionResult> CreateSet(CreateSetDto setDto)
     {
         var createdSetResult = await _setService.CreateNewSetAsync(setDto);
-        if (createdSetResult.Success) return Ok(createdSetResult.Value);
+        if (createdSetResult.Success) return Ok(createdSetResult);
         return BadRequest(createdSetResult.ErrorMessage);
     }
 
@@ -46,10 +46,9 @@ public class SetController : ControllerBase
     public async Task<ActionResult> EditSetProperties(int id, SetDto setDto)
     {
         var result = await _setService.ModifySetPropertiesAsync(id, setDto);
-        if (result is null) return Ok();
+        if (result.Success) return Ok(result);
         return BadRequest(result);
     }
-
 
     [HttpDelete("removeQuestion/{setId:int}")]
     public async Task<ActionResult> RemoveQuestionFromSet(int setId, [FromBody] int questionId)

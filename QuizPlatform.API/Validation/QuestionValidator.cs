@@ -10,6 +10,7 @@ namespace QuizPlatform.API.Validation
         public QuestionValidator()
         {
             RuleFor(e => e.Content).NotEmpty().WithMessage(QuestionErrorMessages.EmptyQuestionContent);
+            RuleFor(m => m.QuestionType).IsInEnum().WithMessage(QuestionErrorMessages.InvalidQuestionType);
             RuleFor(e => e).Custom((e, context) =>
             {
                 if (e.QuestionType == QuestionTypeName.MultipleChoice || e.QuestionType == QuestionTypeName.SingleChoice)
@@ -29,7 +30,7 @@ namespace QuizPlatform.API.Validation
                 {
                     if (e.Answers is null || e.Answers.Count != 2)
                     {
-                        context.AddFailure("Answers", QuestionErrorMessages.WrongNumberOfAnswers);
+                        context.AddFailure("Answers", QuestionErrorMessages.WrongNumberOfCorrectAnswers);
                     }
                 }
 
