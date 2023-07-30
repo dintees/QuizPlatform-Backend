@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.Set;
-using QuizPlatform.Infrastructure.Services;
 
 namespace QuizPlatform.API.Controllers;
 
@@ -12,7 +11,7 @@ public class SetController : ControllerBase
 {
     private readonly ISetService _setService;
 
-    public SetController(ISetService setService, IMapper mapper)
+    public SetController(ISetService setService)
     {
         _setService = setService;
     }

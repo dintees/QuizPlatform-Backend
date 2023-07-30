@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using QuizPlatform.API.Extensions;
 using QuizPlatform.API.Middlewares;
 using QuizPlatform.API.Validation;
 using QuizPlatform.Infrastructure;
@@ -28,6 +29,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Infrastructure DI
 builder.Services.AddInfrastructure();
+
+// Configure services
+builder.Services.ConfigureServices();
 
 // Middlewares
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
@@ -80,6 +84,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAnyonePolicy");
 
 //app.UseMiddleware<ErrorHandlingMiddleware>();
 

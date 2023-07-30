@@ -6,7 +6,6 @@ using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
-using QuizPlatform.Infrastructure.Models;
 using QuizPlatform.Infrastructure.Models.Question;
 using QuizPlatform.Infrastructure.Profiles;
 using QuizPlatform.Infrastructure.Services;
@@ -47,8 +46,8 @@ namespace QuizPlatform.Tests
             var question = await _service.GetByIdAsync(2);
 
             Assert.IsType<QuestionDto>(question);
-            Assert.Equal("Question 2", question!.Question);
-            Assert.Equal(3, question!.Answers?.Count);
+            Assert.Equal("Question 2", question.Question);
+            Assert.Equal(3, question.Answers?.Count);
             Assert.Equal(QuestionTypeName.MultipleChoice, question.QuestionType);
         }
 
@@ -180,7 +179,6 @@ namespace QuizPlatform.Tests
 
             var result = await _service.ModifyQuestionAsync(2, question);
 
-            //Assert.NotNull(result);
             Assert.False(result.Success);
             Assert.Equal(QuestionErrorMessages.WrongNumberOfCorrectAnswers, result.ErrorMessage);
         }
@@ -226,17 +224,12 @@ namespace QuizPlatform.Tests
         private Mock<IQuestionRepository> GetQuestionRepositoryMock(List<Question> questions)
         {
             var questionRepositoryMock = new Mock<IQuestionRepository>();
-            questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool readOnly) => Task.FromResult(questions.FirstOrDefault(e => e.Id == id)));
+            questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool _) => Task.FromResult(questions.FirstOrDefault(e => e.Id == id)));
             questionRepositoryMock.Setup(x => x.InsertQuestionAsync(It.IsAny<Question>())).Returns((Question question) =>
             {
                 question.Id = 4;
                 questions.Add(question);
                 return Task.FromResult(question.Id);
-            });
-            questionRepositoryMock.Setup(x => x.UpdateQuestion(It.IsAny<Question>())).Callback((Question question) =>
-            {
-                var q = questions.FirstOrDefault(q => q.Id == question.Id);
-                q = question;
             });
             questionRepositoryMock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
 

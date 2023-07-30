@@ -27,10 +27,8 @@ public class QuestionController : ControllerBase
     public async Task<ActionResult> CreateQuestion(CreateQuestionDto createQuestionDto)
     {
         var result = await _questionService.CreateQuestionAsync(createQuestionDto);
-        if (result is null)
-        {
-            return Ok();
-        }
+        if (result.Success)
+            return Ok(result);
 
         return BadRequest(result);
     }
