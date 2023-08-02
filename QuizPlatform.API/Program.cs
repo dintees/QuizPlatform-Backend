@@ -1,47 +1,27 @@
 using System.Text;
 using System.Text.Json.Serialization;
-using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.API.Extensions;
 using QuizPlatform.API.Middlewares;
-using QuizPlatform.API.Validation;
 using QuizPlatform.Infrastructure;
 using QuizPlatform.Infrastructure.Authentication;
-using QuizPlatform.Infrastructure.Entities;
-using QuizPlatform.Infrastructure.Models.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// SqlServer connection
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Connection"));
-});
-
-
 // Infrastructure DI
 builder.Services.AddInfrastructure();
 
 // Configure services
-builder.Services.ConfigureServices();
+builder.Services.ConfigureServices(builder.Configuration);
 
 // Middlewares
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
-
-
-// Fluent Validation
-builder.Services.AddScoped<IValidator<UserRegisterDto>, UserRegisterValidator>();
-builder.Services.AddScoped<IValidator<ChangeUserPasswordDto>, ChangeUserPasswordValidator>();
-builder.Services.AddScoped<IValidator<Question>, QuestionValidator>();
-builder.Services.AddScoped<IValidator<Set>, SetValidator>();
 
 
 // JWT settings
@@ -85,7 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAnyonePolicy");
+app.UseCors("DefaultPolicy");
 
 //app.UseMiddleware<ErrorHandlingMiddleware>();
 

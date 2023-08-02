@@ -66,9 +66,9 @@ namespace QuizPlatform.Tests
 
 
         [Theory]
-        [InlineData("test", null, "12345678", "12345678", (int)RoleTypeName.User, UserErrorMessages.EmptyEmail)]
-        [InlineData(null, "test@test.pl", "12345678", "12345678", (int)RoleTypeName.User, UserErrorMessages.EmptyUsername)]
-        [InlineData("test", "test@test.pl", null, null, (int)RoleTypeName.User, UserErrorMessages.EmptyPassword)]
+        [InlineData("test", null, "12345678", "12345678", 1, UserErrorMessages.EmptyEmail)]
+        [InlineData(null, "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyUsername)]
+        [InlineData("test", "test@test.pl", null, null, 1, UserErrorMessages.EmptyPassword)]
 
         public async Task RegisterUserAsync_ForEmptyFields_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
@@ -81,10 +81,10 @@ namespace QuizPlatform.Tests
 
 
         [Theory]
-        [InlineData("test", "test.pl", "12345678", "12345678", (int)RoleTypeName.User, UserErrorMessages.WrongEmailFormat)]
-        [InlineData("test", "test@test.pl", "1234", "1234", (int)RoleTypeName.User, UserErrorMessages.TooShortPassword)]
-        [InlineData("test", "test@test.pl", "12345678", "1234567890", (int)RoleTypeName.User, UserErrorMessages.NotTheSamePasswords)]
-        [InlineData("AdamAbacki", "a@a.pl", "12345678", "12345678", (int)RoleTypeName.User, UserErrorMessages.UserAlreadyExistsError)]
+        [InlineData("test", "test.pl", "12345678", "12345678", 1, UserErrorMessages.WrongEmailFormat)]
+        [InlineData("test", "test@test.pl", "1234", "1234", 1, UserErrorMessages.TooShortPassword)]
+        [InlineData("test", "test@test.pl", "12345678", "1234567890", 1, UserErrorMessages.NotTheSamePasswords)]
+        [InlineData("AdamAbacki", "a@a.pl", "12345678", "12345678", 1, UserErrorMessages.UserAlreadyExistsError)]
         public async Task RegisterUserAsync_ForIncorrectValues_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
             var user = new UserRegisterDto { Username = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
@@ -98,7 +98,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task RegisterUserAsync_ForProperUsernameEmailAndPasswords_ReturnsTrueAndRegisterUser()
         {
-            var user = new UserRegisterDto { Username = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = (int)RoleTypeName.User };
+            var user = new UserRegisterDto { Username = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
 
             var register = await _service.RegisterUserAsync(user);
             var registerConfirmation = await _service.RegisterUserAsync(user);
@@ -141,9 +141,9 @@ namespace QuizPlatform.Tests
         {
             var users = new List<User>
             {
-                new User {Id = 1, Email = "a@a.pl", Username = "AdamAbacki", Password = HashPassword("aaaaaaaa"), Role = new Role { Name = RoleTypeName.Admin} },
-                new User {Id = 2, Email = "b@b.pl", Username = "BartoszBabacki", Password = HashPassword("bbbbbbbb"), Role = new Role { Name = RoleTypeName.Teacher} },
-                new User {Id = 3, Email = "c@c.pl", Username = "CezaryCadacki", Password = HashPassword("cccccccc"), Role = new Role { Name = RoleTypeName.User} },
+                new User {Id = 1, Email = "a@a.pl", Username = "AdamAbacki", Password = HashPassword("aaaaaaaa"), Role = new Role { Name = "Admin"} },
+                new User {Id = 2, Email = "b@b.pl", Username = "BartoszBabacki", Password = HashPassword("bbbbbbbb"), Role = new Role { Name = "Teacher"} },
+                new User {Id = 3, Email = "c@c.pl", Username = "CezaryCadacki", Password = HashPassword("cccccccc"), Role = new Role { Name = "User"} },
             };
             return users;
         }

@@ -18,26 +18,24 @@ public class UserController : ControllerBase
     {
         _userService = userService;
     }
-    
+
     [HttpPost("login")]
     public async Task<ActionResult> Login(UserLoginDto dto)
     {
         var token = await _userService.LoginAndGenerateJwtTokenAsync(dto);
-        if (token is null) return Unauthorized();
+        if (token is null) return Unauthorized("Bad username or password.");
         return Ok(token);
     }
-    
+
     [HttpPost("register")]
     public async Task<ActionResult> Register(UserRegisterDto dto)
     {
         var registrationError = await _userService.RegisterUserAsync(dto);
         if (registrationError is null)
-        {
             return await Login(new UserLoginDto { Email = dto.Email, Password = dto.Password });
-        }
         return BadRequest(registrationError);
     }
-    
+
     [Authorize]
     [HttpPost("changePassword")]
     public async Task<ActionResult> ChangePassword(ChangeUserPasswordDto dto)

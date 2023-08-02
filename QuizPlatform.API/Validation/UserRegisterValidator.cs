@@ -14,6 +14,6 @@ public class UserRegisterValidator : AbstractValidator<UserRegisterDto>
         RuleFor(u => u.Password).NotEmpty().WithMessage(UserErrorMessages.EmptyPassword)
             .MinimumLength(8).WithMessage(UserErrorMessages.TooShortPassword);
         RuleFor(u => u.PasswordConfirmation).Equal(u => u.Password).WithMessage(UserErrorMessages.NotTheSamePasswords);
-        RuleFor(u => u.RoleId).NotEmpty();
+        RuleFor(u => u.RoleId).NotEmpty().WithMessage(UserErrorMessages.RoleCouldNotBeEmpty);
     }
 }
