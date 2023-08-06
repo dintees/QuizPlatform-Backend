@@ -47,21 +47,28 @@ namespace QuizPlatform.Tests
         [InlineData("a@a.pl", "b")]
         public async Task LoginAndGenerateJwtTokenAsync_ForInvalidUsernameOrPassword_ReturnsNull(string email, string password)
         {
+            // Arrange
             var user = new UserLoginDto { Email = email, Password = password };
 
+            // Act
             var login = await _service.LoginAndGenerateJwtTokenAsync(user);
 
+            // Assert
             Assert.Null(login);
         }
 
         [Fact]
         public async Task LoginAndGenerateJwtTokenAsync_ForValidUsernameAndPassword_ReturnsToken()
         {
+            // Arrange
             var user = new UserLoginDto { Email = "a@a.pl", Password = "aaaaaaaa" };
 
+            // Act
             var login = await _service.LoginAndGenerateJwtTokenAsync(user);
 
-            Assert.NotNull(login);
+            // Assert
+            Assert.NotNull(login?.Token);
+            Assert.Equal("AdamAbacki", login.Username);
         }
 
 
@@ -72,10 +79,13 @@ namespace QuizPlatform.Tests
 
         public async Task RegisterUserAsync_ForEmptyFields_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
+            // Arrange
             var user = new UserRegisterDto { Username = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
+            // Act
             var register = await _service.RegisterUserAsync(user);
 
+            // Assert
             Assert.Equal(expectedResult, register);
         }
 
@@ -87,22 +97,28 @@ namespace QuizPlatform.Tests
         [InlineData("AdamAbacki", "a@a.pl", "12345678", "12345678", 1, UserErrorMessages.UserAlreadyExistsError)]
         public async Task RegisterUserAsync_ForIncorrectValues_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
+            // Arrange
             var user = new UserRegisterDto { Username = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
+            // Act
             var register = await _service.RegisterUserAsync(user);
 
+            // Assert
             Assert.Equal(expectedResult, register);
         }
 
 
         [Fact]
-        public async Task RegisterUserAsync_ForProperUsernameEmailAndPasswords_ReturnsTrueAndRegisterUser()
+        public async Task RegisterUserAsync_ForTheSameUsernameAndPassword_ReturnsTrueAndRegisterUser()
         {
+            // Arrange
             var user = new UserRegisterDto { Username = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
 
+            // Act
             var register = await _service.RegisterUserAsync(user);
             var registerConfirmation = await _service.RegisterUserAsync(user);
            
+            // Assert
             Assert.Null(register);
             Assert.Equal(UserErrorMessages.UserAlreadyExistsError, registerConfirmation);
         }
@@ -115,10 +131,13 @@ namespace QuizPlatform.Tests
         [InlineData(1, "old", "12345678", "12345678", UserErrorMessages.CurrentPasswordIsIncorrect)]
         public async Task ChangePassword_ForInvalidValues_ReturnsProperMessageError(int id, string oldPassword, string newPassword, string newPasswordConfirmation, string expectedResult)
         {
-            var changeuserPassword = new ChangeUserPasswordDto { OldPassword = oldPassword, NewPassword = newPassword, NewPasswordConfirmation = newPasswordConfirmation };
+            // Arrange
+            var changeUserPassword = new ChangeUserPasswordDto { OldPassword = oldPassword, NewPassword = newPassword, NewPasswordConfirmation = newPasswordConfirmation };
 
-            var changePassword = await _service.ChangePasswordAsync(id, changeuserPassword);
+            // Act
+            var changePassword = await _service.ChangePasswordAsync(id, changeUserPassword);
 
+            // Assert
             Assert.Equal(expectedResult, changePassword);
         }
 

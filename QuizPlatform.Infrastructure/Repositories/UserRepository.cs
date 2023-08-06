@@ -20,7 +20,7 @@ namespace QuizPlatform.Infrastructure.Repositories
 
         public async Task<User?> GetUserByEmail(string email)
         {
-            return await _context.Users.AsNoTracking()
+            return await _context.Users.AsNoTracking().Include(e => e.Role)
                 .FirstOrDefaultAsync(e => e.Email == email);
         }
 
