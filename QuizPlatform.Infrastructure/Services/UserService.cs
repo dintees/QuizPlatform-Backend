@@ -33,16 +33,18 @@ public class UserService : IUserService
 
     public async Task<UserDto?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
-        var user = await _userRepository.GetUserByEmail(dto.Email!); // Include Role
+        var user = await _userRepository.GetUserByEmail(dto.Email!);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return null;
 
 
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username!),
-            //new Claim(ClaimTypes.Role, $"{user.Role.Name}"),
-            new Claim(ClaimTypes.Email, $"{user.Email}")
+            new Claim("Username", user.Username!),
+            new Claim(ClaimTypes.Role, $"{user.Role?.Name}"),
+            new Claim("RoleName", $"{user.Role?.Name}"),
+            new Claim("Email", $"{user.Email}")
+            //new Claim(ClaimTypes.Email, $"{user.Email}")
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authenticationSettings.Key!));
