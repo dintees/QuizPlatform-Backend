@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.Set;
@@ -10,12 +10,25 @@ namespace QuizPlatform.API.Controllers;
 public class SetController : ControllerBase
 {
     private readonly ISetService _setService;
+    private readonly IUserContextService _userContextService;
 
-    public SetController(ISetService setService)
+    public SetController(ISetService setService, IUserContextService userContextService)
     {
         _setService = setService;
+        _userContextService = userContextService;
     }
-    
+
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult> GetAll()
+    {
+        // TODO
+        var userId = _userContextService.UserId;
+        if (userId is null) return BadRequest();
+
+        return Ok(userId.ToString());
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SetDto?>> GetByIdAsync(int id)
     {

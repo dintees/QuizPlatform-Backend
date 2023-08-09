@@ -40,10 +40,10 @@ public class UserService : IUserService
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim("Username", user.Username!),
+            new Claim("username", user.Username!),
             new Claim(ClaimTypes.Role, $"{user.Role?.Name}"),
-            new Claim("RoleName", $"{user.Role?.Name}"),
-            new Claim("Email", $"{user.Email}")
+            new Claim("roleName", $"{user.Role?.Name}"),
+            new Claim("email", $"{user.Email}")
             //new Claim(ClaimTypes.Email, $"{user.Email}")
         };
 

@@ -24,6 +24,14 @@ public class SetService : ISetService
         _setValidator = setValidator;
     }
 
+    public async Task<List<string>?> GetAllUserSets(int userId)
+    {
+        // TODO
+        //var sets = await _setRepository.GetUserSets();
+        //return sets;
+        return null;
+    }
+
     public async Task<SetDto?> GetByIdAsync(int id)
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(id);
