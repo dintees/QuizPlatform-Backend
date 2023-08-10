@@ -31,7 +31,7 @@ public class UserService : IUserService
         _changeUserPasswordValidator = changeUserPasswordValidator;
     }
 
-    public async Task<UserDto?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
+    public async Task<string?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
         var user = await _userRepository.GetUserByEmail(dto.Email!);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return null;
@@ -56,20 +56,22 @@ public class UserService : IUserService
         // log information to UserSessions table
         await _loggingService.LogLoginInformation(user.Id);
 
-        string tokenString = tokenHandler.WriteToken(token);
+        return tokenHandler.WriteToken(token);
 
-        if (tokenString is null) return null;
+        //string tokenString = tokenHandler.WriteToken(token);
 
-        var userDto = new UserDto()
-        {
-            Id = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            Role = user.Role?.Name,
-            Token = tokenString
-        };
+        //if (tokenString is null) return null;
 
-        return userDto;
+        //var userDto = new UserDto()
+        //{
+        //    Id = user.Id,
+        //    Email = user.Email,
+        //    Username = user.Username,
+        //    Role = user.Role?.Name,
+        //    Token = tokenString
+        //};
+
+        //return userDto;
     }
 
     public async Task<string?> RegisterUserAsync(UserRegisterDto dto)

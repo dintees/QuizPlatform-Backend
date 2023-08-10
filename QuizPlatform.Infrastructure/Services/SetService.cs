@@ -24,12 +24,11 @@ public class SetService : ISetService
         _setValidator = setValidator;
     }
 
-    public async Task<List<string>?> GetAllUserSets(int userId)
+    public async Task<List<UserSetDto>?> GetAllUserSets(int userId)
     {
-        // TODO
-        //var sets = await _setRepository.GetUserSets();
-        //return sets;
-        return null;
+        var sets = await _setRepository.GetSetsByUserIdAsync(userId);
+
+        return _mapper.Map<List<UserSetDto>?>(sets);
     }
 
     public async Task<SetDto?> GetByIdAsync(int id)
@@ -41,9 +40,11 @@ public class SetService : ISetService
         return setDto;
     }
 
-    public async Task<Result<int>> CreateNewSetAsync(CreateSetDto dto)
+    public async Task<Result<int>> CreateNewSetAsync(CreateSetDto dto, int userId)
     {
         var newSet = _mapper.Map<Set>(dto);
+        newSet.UserId = userId;
+
         var validationResult = await _setValidator.ValidateAsync(newSet);
         if (!validationResult.IsValid) return new Result<int> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 

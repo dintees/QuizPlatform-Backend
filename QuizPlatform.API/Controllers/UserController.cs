@@ -20,15 +20,15 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<UserDto?>> Login(UserLoginDto dto)
+    public async Task<ActionResult> Login(UserLoginDto dto)
     {
-        var userDto = await _userService.LoginAndGenerateJwtTokenAsync(dto);
-        if (userDto is null) return Unauthorized("Bad username or password.");
-        return Ok(userDto);
+        var token = await _userService.LoginAndGenerateJwtTokenAsync(dto);
+        if (token is null) return Unauthorized("Bad username or password.");
+        return Ok(token);
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<UserDto?>> Register(UserRegisterDto dto)
+    public async Task<ActionResult> Register(UserRegisterDto dto)
     {
         var registrationError = await _userService.RegisterUserAsync(dto);
         if (registrationError is null)

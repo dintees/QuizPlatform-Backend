@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Interfaces;
+using QuizPlatform.Infrastructure.Models.Set;
 
 namespace QuizPlatform.Infrastructure.Repositories
 {
@@ -28,6 +29,11 @@ namespace QuizPlatform.Infrastructure.Repositories
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior= QueryTrackingBehavior.NoTracking;
             return await _context.Sets.FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<List<Set>?> GetSetsByUserIdAsync(int userId)
+        {
+            return await _context.Sets.Where(e => e.UserId == userId).ToListAsync();
         }
 
         public async Task InsertSetAsync(Set set)

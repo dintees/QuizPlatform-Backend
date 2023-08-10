@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using QuizPlatform.API.Validation;
 using QuizPlatform.Infrastructure.Entities;
@@ -69,7 +70,7 @@ namespace QuizPlatform.Tests
                 Description = "Description"
             };
 
-            var result = await _service.CreateNewSetAsync(set);
+            var result = await _service.CreateNewSetAsync(set, 1);
 
             Assert.False(result.Success);
             Assert.Equal(SetErrorMessages.EmptySetTitle, result.ErrorMessage);
@@ -86,7 +87,7 @@ namespace QuizPlatform.Tests
                 Description = "Description"
             };
 
-            var result = await _service.CreateNewSetAsync(set);
+            var result = await _service.CreateNewSetAsync(set, 1);
             var foundSet = await _service.GetByIdAsync(3);
 
             Assert.True(result.Success);
@@ -118,6 +119,19 @@ namespace QuizPlatform.Tests
             Assert.Null(result.ErrorMessage);
             Assert.Equal(2, result.Value);
             Assert.Equal("New title", foundSet?.Title);
+        }
+
+        [Fact]
+        public async Task GetAllUserSets_ForGivenUserId_ReturnsSetOwnedByUser()
+        {
+            // Arrange
+            const int userId = 5;
+
+            // Act
+            var result = await _service.GetAllUserSets(userId);
+
+            // Assert
+            Assert.Equal(2, result?.Count);
         }
 
         [Theory]
@@ -193,6 +207,10 @@ namespace QuizPlatform.Tests
                     set.Id = 3;
                     sets.Add(set);
                 });
+            mock.Setup(x => x.GetSetsByUserIdAsync(It.IsAny<int>())).ReturnsAsync((int userId) =>
+            {
+                return sets.Where(e => e.UserId == userId).ToList();
+            });
             mock.Setup(x => x.InsertQuestionSetAsync(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
             {
                 var set = sets.FirstOrDefault(e => e.Id == questionSet.Set?.Id);
@@ -230,6 +248,7 @@ namespace QuizPlatform.Tests
                     Title = "Set 1",
                     Description = "Description 1",
                     IsDeleted = false,
+                    UserId = 5,
                     Questions = new List<QuestionSet>
                     {
                         new QuestionSet
@@ -289,6 +308,7 @@ namespace QuizPlatform.Tests
                     Title = "Set 2",
                     Description = "Description 2",
                     IsDeleted = false,
+                    UserId = 5,
                     Questions = null
                 }
             };
