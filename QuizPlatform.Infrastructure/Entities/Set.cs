@@ -8,5 +8,7 @@ public class Set
     public bool IsDeleted { get; set; }
     public int UserId { get; set; }
     public User? User { get; set; }
-    public ICollection<QuestionSet>? Questions { get; set; }
+
+    public ICollection<Question>? Questions { get; set; }
+    //public ICollection<QuestionSet>? Questions { get; set; }
 }

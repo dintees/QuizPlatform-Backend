@@ -22,7 +22,6 @@ public class SetController : ControllerBase
     [HttpGet]
     public async Task<ActionResult> GetAllUserSets()
     {
-        // TODO
         var userId = _userContextService.UserId;
 
         if (userId is null) return BadRequest();
@@ -49,6 +48,17 @@ public class SetController : ControllerBase
         var createdSetResult = await _setService.CreateNewSetAsync(setDto, userId.Value);
         if (createdSetResult.Success) return Ok(createdSetResult);
         return BadRequest(createdSetResult.ErrorMessage);
+    }
+
+    [Authorize]
+    [HttpPost("createWithQuestions")]
+    public async Task<ActionResult> CreateSetWithQuestions(CreateSetDto setDto)
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null) return Unauthorized();
+
+        var result = await _setService.CreateNewSetWithQuestions(setDto, userId.Value);
+        return Ok(result);
     }
 
     [HttpPost("addQuestion/{setId:int}")]

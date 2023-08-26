@@ -19,7 +19,7 @@ namespace QuizPlatform.Infrastructure.Repositories
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
             var tmp = await _context.Sets.AsSplitQuery()
-            .Include(e => e.Questions)!.ThenInclude(r => r.Question).ThenInclude(e => e!.Answers)
+            .Include(e => e.Questions)!.ThenInclude(e => e!.Answers)//.ThenInclude(r => r.Question).ThenInclude(e => e!.Answers)
             .FirstOrDefaultAsync(s => s.Id == id);
 
             return tmp;
@@ -49,21 +49,6 @@ namespace QuizPlatform.Infrastructure.Repositories
         public async Task<bool> SaveAsync()
         {
             return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task InsertQuestionSetAsync(QuestionSet questionSet)
-        {
-            await _context.QuestionSets.AddAsync(questionSet);
-        }
-
-        public async Task<QuestionSet?> GetQuestionSetBySetIdAndQuestionIdAsync(int setId, int questionId)
-        {
-            return await _context.QuestionSets.FirstOrDefaultAsync(e => e.SetId == setId && e.QuestionId == questionId);
-        }
-
-        public void RemoveQuestionFromSet(QuestionSet questionSet)
-        {
-            _context.QuestionSets.Remove(questionSet);
         }
     }
 }

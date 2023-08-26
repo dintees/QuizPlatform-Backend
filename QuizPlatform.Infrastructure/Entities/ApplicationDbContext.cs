@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId });
+        modelBuilder.Entity<Set>().HasMany(d => d.Questions).WithMany(s => s.Sets).UsingEntity<QuestionSet>();
+        //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId });
     }
 }

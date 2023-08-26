@@ -29,14 +29,20 @@ namespace QuizPlatform.Tests
             var mapper = mapperConfiguration.CreateMapper();
 
             var questionRepositoryMock = new Mock<IQuestionRepository>();
-            questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(2, It.IsAny<bool>())).ReturnsAsync(new Question
-            {
-                Id = 2,
-                Content = "Sample question",
-                QuestionType = QuestionTypeName.ShortAnswer,
-                IsDeleted = false,
-                Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = "a", Correct = true } }
-            });
+            questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).ReturnsAsync(
+                (int id, bool readOnly) =>
+                {
+                    return GetQuestions().FirstOrDefault(e => e.Id == id);
+                });
+
+            //questionRepositoryMock.Setup(x => x.GetQuestionByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).ReturnsAsync(new Question
+            //{
+            //    Id = 2,
+            //    Content = "Sample question",
+            //    QuestionType = QuestionTypeName.ShortAnswer,
+            //    IsDeleted = false,
+            //    Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = "a", Correct = true } }
+            //});
 
             IValidator<Set> setValidator = new SetValidator();
 
@@ -168,7 +174,7 @@ namespace QuizPlatform.Tests
         }
 
         [Fact]
-        public async Task RemoveQuestionToSetAsync_ForValidIds_ReturnsTrueAndAddRemoveQuestionFromSet()
+        public async Task RemoveQuestionFromSetAsync_ForValidIds_ReturnsTrueAndAddRemoveQuestionFromSet()
         {
             var result = await _service.RemoveQuestionFromSetAsync(1, 3);
 
@@ -211,36 +217,87 @@ namespace QuizPlatform.Tests
             {
                 return sets.Where(e => e.UserId == userId).ToList();
             });
-            mock.Setup(x => x.InsertQuestionSetAsync(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
-            {
-                var set = sets.FirstOrDefault(e => e.Id == questionSet.Set?.Id);
-                if (set?.Questions is null) set!.Questions = new List<QuestionSet>();
-                set.Questions?.Add(questionSet);
-            });
-            mock.Setup(x => x.GetQuestionSetBySetIdAndQuestionIdAsync(It.IsAny<int>(), It.IsAny<int>()))
-                .ReturnsAsync((int setId, int questionId) =>
-                {
-                    var set = sets.FirstOrDefault(e => e.Id == setId);
-                    if (set is null) return null;
-                    var question = set.Questions!.FirstOrDefault(e => e.Question!.Id == questionId);
-                    if (question is null || question.Question is null) return null;
-                    return new QuestionSet { QuestionId = questionId, SetId = setId };
-                });
-            mock.Setup(x => x.RemoveQuestionFromSet(It.IsAny<QuestionSet>())).Callback((QuestionSet questionSet) =>
-            {
-                var set = sets.FirstOrDefault(e => e.Id == questionSet.SetId);
-                var qq = set?.Questions!.FirstOrDefault(e => e.Question!.Id == questionSet.QuestionId);
-                set!.Questions?.Remove(qq!);
-
-            });
             mock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
 
             return mock;
         }
 
-        private List<Set> GetSets()
+        private List<Question> GetQuestions()
         {
-            return new List<Set>
+            return new List<Question>
+            {
+                new Question
+                {
+                    Id = 1,
+                    Content = "Question 1 set 1",
+                    QuestionType = QuestionTypeName.ShortAnswer,
+                    Answers = new List<QuestionAnswer>
+                    {
+                        new QuestionAnswer
+                        {
+                            Content = "Answer a",
+                            Correct = true
+                        },
+                        new QuestionAnswer
+                        {
+                            Content = "Answer b",
+                            Correct = false
+                        },
+                        new QuestionAnswer
+                        {
+                            Content = "Answer c",
+                            Correct = false
+                        }
+                    },
+                    IsDeleted = false
+                },
+                new Question
+                {
+                    Id = 2,
+                    Content = "Question 2",
+                    QuestionType = QuestionTypeName.ShortAnswer,
+                    Answers = new List<QuestionAnswer>
+                    {
+                        new QuestionAnswer
+                        {
+                            Content = "Answer a",
+                            Correct = true
+                        },
+                        new QuestionAnswer
+                        {
+                            Content = "Answer b",
+                            Correct = false
+                        },
+                    },
+                    IsDeleted = false
+                },
+                new Question
+                {
+                    Id = 3,
+                    Content = "Question 2 set 1",
+                    QuestionType = QuestionTypeName.TrueFalse,
+                    Answers = new List<QuestionAnswer>
+                    {
+                        new QuestionAnswer
+                        {
+                            Content = "Answer true",
+                            Correct = true
+                        },
+                        new QuestionAnswer
+                        {
+                            Content = "Answer false",
+                            Correct = false
+                        },
+                    },
+                    IsDeleted = false
+                }
+            };
+        }
+
+
+        private List<Set> GetSets()
+    {
+        return new List<Set>
             {
                 new Set
                 {
@@ -249,11 +306,9 @@ namespace QuizPlatform.Tests
                     Description = "Description 1",
                     IsDeleted = false,
                     UserId = 5,
-                    Questions = new List<QuestionSet>
+                    Questions = new List<Question>
                     {
-                        new QuestionSet
-                        {
-                            Question = new Question
+                        new Question
                             {
                                 Id = 1,
                                 Content = "Question 1 set 1",
@@ -276,11 +331,8 @@ namespace QuizPlatform.Tests
                                     }
                                 },
                                 IsDeleted = false
-                            }
-                        },
-                        new QuestionSet
-                        {
-                            Question = new Question
+                            },
+                        new Question
                             {
                                 Id = 3,
                                 Content = "Question 2 set 1",
@@ -300,7 +352,6 @@ namespace QuizPlatform.Tests
                                 IsDeleted = false
                             }
                         },
-                    }
                 },
                 new Set
                 {
@@ -312,6 +363,6 @@ namespace QuizPlatform.Tests
                     Questions = null
                 }
             };
-        }
     }
+}
 }

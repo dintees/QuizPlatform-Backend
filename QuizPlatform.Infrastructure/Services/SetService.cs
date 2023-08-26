@@ -53,7 +53,7 @@ public class SetService : ISetService
             ? new Result<int> { Success = true, Value = newSet.Id }
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
-
+    
     public async Task<Result<int>> ModifySetPropertiesAsync(int id, SetDto setDto)
     {
         var set = _mapper.Map<Set>(setDto);
@@ -84,17 +84,11 @@ public class SetService : ISetService
 
         if (set is null || question is null) return false;
 
-        // if (Array.Exists<>(set.Questions, e => e. == question)) return false;
-
-        var questionSet = new QuestionSet
-        {
-            Question = question,
-            Set = set
-        };
 
         try
         {
-            await _setRepository.InsertQuestionSetAsync(questionSet);
+            set.Questions ??= new List<Question>();
+            set.Questions.Add(question);
             return await _setRepository.SaveAsync();
         }
         catch (DbUpdateException)
@@ -105,10 +99,13 @@ public class SetService : ISetService
 
     public async Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId)
     {
-        var questionSet = await _setRepository.GetQuestionSetBySetIdAndQuestionIdAsync(setId, questionId);
-        if (questionSet is null) return false;
+        var set = await _setRepository.GetSetByIdAsync(setId);
+        if (set is null) return false;
 
-        _setRepository.RemoveQuestionFromSet(questionSet);
+        var question = set.Questions?.FirstOrDefault(x => x.Id == questionId);
+        if (question is null) return false;
+
+        set.Questions?.Remove(question);
         return await _setRepository.SaveAsync();
     }
 
@@ -119,5 +116,16 @@ public class SetService : ISetService
         set.IsDeleted = true;
         _setRepository.UpdateSet(set);
         return await _setRepository.SaveAsync();
+    }
+
+    public async Task<Result<int>> CreateNewSetWithQuestions(CreateSetDto dto, int userId)
+    {
+        var set = _mapper.Map<Set>(dto);
+        set.UserId = userId;
+
+        await _setRepository.InsertSetAsync(set);
+        var created = await _setRepository.SaveAsync();
+
+        return created ? new Result<int> { Success = true, Value = set.Id } : new Result<int> { Success = false, ErrorMessage = "Sth went wrong" };
     }
 }

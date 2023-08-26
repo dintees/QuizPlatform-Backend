@@ -9,5 +9,6 @@ public class Question
     public QuestionTypeName QuestionType { get; set; }
     public bool IsDeleted { get; set; }
     public ICollection<QuestionAnswer>? Answers { get; set; }
-    public ICollection<QuestionSet>? Sets { get; set; }
+    public ICollection<Set>? Sets { get; set; }
+    //public ICollection<QuestionSet>? Sets { get; set; }
 }
