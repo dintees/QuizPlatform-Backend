@@ -18,11 +18,11 @@ namespace QuizPlatform.Infrastructure.Repositories
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-            var tmp = await _context.Sets.AsSplitQuery()
+            var set = await _context.Sets.AsSplitQuery()
             .Include(e => e.Questions)!.ThenInclude(e => e!.Answers)//.ThenInclude(r => r.Question).ThenInclude(e => e!.Answers)
             .FirstOrDefaultAsync(s => s.Id == id);
 
-            return tmp;
+            return set;
         }
 
         public async Task<Set?> GetSetByIdAsync(int id, bool readOnly = true)
@@ -33,7 +33,7 @@ namespace QuizPlatform.Infrastructure.Repositories
 
         public async Task<List<Set>?> GetSetsByUserIdAsync(int userId)
         {
-            return await _context.Sets.Where(e => e.UserId == userId).ToListAsync();
+            return await _context.Sets.Where(e => e.UserId == userId && !e.IsDeleted).ToListAsync();
         }
 
         public async Task InsertSetAsync(Set set)

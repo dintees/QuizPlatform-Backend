@@ -57,7 +57,7 @@ public class SetController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await _setService.CreateNewSetWithQuestions(setDto, userId.Value);
+        var result = await _setService.CreateNewSetWithQuestionsAsync(setDto, userId.Value);
         return Ok(result);
     }
 

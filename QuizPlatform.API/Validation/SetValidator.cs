@@ -8,7 +8,8 @@ namespace QuizPlatform.API.Validation
     {
         public SetValidator()
         {
-            RuleFor(e => e.Title).NotNull().WithMessage(SetErrorMessages.EmptySetTitle);
+            RuleFor(e => e.Title).NotEmpty().WithMessage(SetErrorMessages.EmptySetTitle);
+            RuleForEach(e => e.Questions).SetValidator(new QuestionValidator());
         }
     }
 }

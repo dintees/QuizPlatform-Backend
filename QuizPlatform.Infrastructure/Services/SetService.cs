@@ -53,7 +53,7 @@ public class SetService : ISetService
             ? new Result<int> { Success = true, Value = newSet.Id }
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
-    
+
     public async Task<Result<int>> ModifySetPropertiesAsync(int id, SetDto setDto)
     {
         var set = _mapper.Map<Set>(setDto);
@@ -111,21 +111,31 @@ public class SetService : ISetService
 
     public async Task<bool> DeleteByIdAsync(int id)
     {
-        var set = await _setRepository.GetSetByIdAsync(id);
+        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
         if (set is null) return false;
         set.IsDeleted = true;
+
+        if (set.Questions is not null)
+            foreach (var question in set.Questions)
+                question.IsDeleted = true;
+
         _setRepository.UpdateSet(set);
         return await _setRepository.SaveAsync();
     }
 
-    public async Task<Result<int>> CreateNewSetWithQuestions(CreateSetDto dto, int userId)
+    public async Task<Result<SetDto>> CreateNewSetWithQuestionsAsync(CreateSetDto dto, int userId)
     {
         var set = _mapper.Map<Set>(dto);
         set.UserId = userId;
 
+        var validationResult = await _setValidator.ValidateAsync(set);
+
+        if (!validationResult.IsValid)
+            return new Result<SetDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+
         await _setRepository.InsertSetAsync(set);
         var created = await _setRepository.SaveAsync();
 
-        return created ? new Result<int> { Success = true, Value = set.Id } : new Result<int> { Success = false, ErrorMessage = "Sth went wrong" };
+        return created ? new Result<SetDto> { Success = true, Value = _mapper.Map<SetDto>(set) } : new Result<SetDto> { Success = false, ErrorMessage = "Something went wrong" };
     }
 }
