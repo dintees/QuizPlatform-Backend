@@ -7,5 +7,5 @@ public class QuestionDto
     public int Id { get; set; }
     public string? Question { get; set; }
     public QuestionTypeName QuestionType { get; set; }
-    public List<string>? Answers { get; set; }
+    public List<CreateAnswerDto>? Answers { get; set; }
 }

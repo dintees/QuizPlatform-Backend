@@ -1,5 +1,4 @@
 ﻿using QuizPlatform.Infrastructure.Models.Question;
-
 namespace QuizPlatform.Infrastructure.Models.Set;
 
 public class SetDto

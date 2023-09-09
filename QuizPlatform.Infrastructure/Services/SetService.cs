@@ -77,6 +77,24 @@ public class SetService : ISetService
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
+    public async Task<Result<SetDto>> ModifySet(int id, CreateSetDto dto)
+    {
+        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
+        if (set is null)
+            return new Result<SetDto> { Success = false, ErrorMessage = "Set not found." };
+
+        var validationResult = await _setValidator.ValidateAsync(_mapper.Map<Set>(dto));
+        if (!validationResult.IsValid)
+            return new Result<SetDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+
+        set.Title = dto.Title;
+        set.Description = dto.Description;
+        set.Questions = new List<Question>(_mapper.Map<IEnumerable<Question>>(dto.Questions));
+
+        var modified = await _setRepository.SaveAsync();
+        return modified ? new Result<SetDto> { Success = true, Value = _mapper.Map<SetDto>(set) } : new Result<SetDto> { Success = false, ErrorMessage = "Something went wrong" };
+    }
+
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)
     {
         var set = await _setRepository.GetSetByIdAsync(setId, false);

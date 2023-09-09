@@ -58,7 +58,8 @@ public class SetController : ControllerBase
         if (userId is null) return Unauthorized();
 
         var result = await _setService.CreateNewSetWithQuestionsAsync(setDto, userId.Value);
-        return Ok(result);
+        if (result.Success) return Ok(result);
+        return BadRequest(result);
     }
 
     [HttpPost("addQuestion/{setId:int}")]
@@ -70,10 +71,11 @@ public class SetController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPut("edit/{id}")]
-    public async Task<ActionResult> EditSetProperties(int id, SetDto setDto)
+    [Authorize]
+    [HttpPut("edit/{id:int}")]
+    public async Task<ActionResult> EditSetProperties(int id, CreateSetDto setDto)
     {
-        var result = await _setService.ModifySetPropertiesAsync(id, setDto);
+        var result = await _setService.ModifySet(id, setDto);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }

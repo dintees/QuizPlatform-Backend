@@ -20,9 +20,12 @@ public class MainProfile : Profile
         CreateMap<CreateAnswerDto, QuestionAnswer>()
                 .ForMember(m => m.Content, o => o.MapFrom(s => s.Answer));
 
+        CreateMap<QuestionAnswer, CreateAnswerDto>()
+            .ForMember(m => m.Answer, o => o.MapFrom(s => s.Content));
+
         CreateMap<Question, QuestionDto>()
-            .ForMember(m => m.Question, o => o.MapFrom(s => s.Content))
-            .ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
+            .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
+            //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
 
         // Set
         CreateMap<Set, SetDto>();
