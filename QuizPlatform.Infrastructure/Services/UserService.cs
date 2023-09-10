@@ -84,15 +84,12 @@ public class UserService : IUserService
 
     public async Task<bool> ConfirmAccountAsync(string email, string code)
     {
-        if (code == "111111")
-        {
-            var user = await _userRepository.GetUserByEmailAsync(email, false);
-            if (user is null) return false;
+        if (code != "111111") return false;
+        var user = await _userRepository.GetUserByEmailAsync(email, false);
+        if (user is null) return false;
 
-            user.AccountConfirmed = true;
-            return await _userRepository.SaveAsync();
-        }
-        return false;
+        user.AccountConfirmed = true;
+        return await _userRepository.SaveAsync();
     }
 
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)

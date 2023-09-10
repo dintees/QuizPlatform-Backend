@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace QuizPlatform.Infrastructure.Entities;
 
@@ -18,12 +17,9 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.Entity<Role>().HasData(new[]
-        {
-            new Role { Id = 1, Name = "Admin" },
-            new Role { Id = 2, Name = "User" },
-        });
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
         //modelBuilder.Entity<Set>().HasMany(d => d.Questions).WithMany(s => s.Sets).UsingEntity<QuestionSet>();
-        //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId }); // to del
+        //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId }); // to delete
     }
 }
