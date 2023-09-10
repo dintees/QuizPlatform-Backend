@@ -25,7 +25,7 @@ public class MainProfile : Profile
 
         CreateMap<Question, QuestionDto>()
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
-            //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
+        //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
 
         // Set
         CreateMap<Set, SetDto>();
@@ -38,6 +38,7 @@ public class MainProfile : Profile
             .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.Question!.QuestionType))
             .ForMember(m => m.Answers, o => o.MapFrom(s => s.Question!.Answers!.Select(e => e.Content)));
 
-        CreateMap<Set, UserSetDto>();
+        CreateMap<Set, UserSetDto>()
+            .ForMember(m => m.Author, o => o.MapFrom(s => s.User!.UserName));
     }
 }

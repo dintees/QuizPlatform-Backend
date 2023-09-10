@@ -18,21 +18,25 @@ namespace QuizPlatform.Infrastructure.Repositories
             await _context.Users.AddAsync(user);
         }
 
-        public async Task<User?> GetUserByEmail(string email)
+        public async Task<User?> GetUserByEmailAsync(string email, bool readOnly = true)
         {
-            return await _context.Users.AsNoTracking().Include(e => e.Role)
+            if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+            return await _context.Users
+                .Include(e => e.Role)
                 .FirstOrDefaultAsync(e => e.Email == email);
         }
 
         public async Task<User?> GetUserAsync(string username, string email)
         {
-            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.Username == username || e.Email == email);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.UserName == username || e.Email == email);
         }
 
-        public async Task<User?> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(int id, bool readOnly = true)
         {
-            return await _context.Users.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == id);
+            if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+            return await _context.Users.FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public void UpdateUser(User user)
@@ -42,6 +46,14 @@ namespace QuizPlatform.Infrastructure.Repositories
 
         public async Task<bool> SaveAsync()
         {
+            foreach (var entityEntry in _context.ChangeTracker.Entries<Entity>())
+            {
+                var now = DateTime.Now;
+
+                if (entityEntry.State == EntityState.Added)
+                    entityEntry.Property(e => e.TsInsert).CurrentValue = now;
+                entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
+            }
             return await _context.SaveChangesAsync() > 0;
         }
     }

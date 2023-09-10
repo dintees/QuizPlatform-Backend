@@ -8,6 +8,7 @@ using QuizPlatform.Infrastructure.Authentication;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
+using QuizPlatform.Infrastructure.Models;
 using QuizPlatform.Infrastructure.Models.User;
 
 namespace QuizPlatform.Infrastructure.Services;
@@ -31,20 +32,25 @@ public class UserService : IUserService
         _changeUserPasswordValidator = changeUserPasswordValidator;
     }
 
-    public async Task<string?> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
+    public async Task<Result<string>> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
-        var user = await _userRepository.GetUserByEmail(dto.Email!);
-        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return null;
+        var user = await _userRepository.GetUserByEmailAsync(dto.Email!);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return new Result<string> { Success = false, ErrorMessage = UserLoginErrorMessages.BadUserNameOrPassword };
+
+        if (user.AccountConfirmed == false)
+            return new Result<string>
+            { Success = false, ErrorMessage = UserLoginErrorMessages.AccountHasNotBeenConfirmed };
 
 
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim("username", user.Username!),
-            new Claim(ClaimTypes.Role, $"{user.Role?.Name}"),
-            new Claim("roleName", $"{user.Role?.Name}"),
-            new Claim("email", $"{user.Email}")
-            //new Claim(ClaimTypes.Email, $"{user.Email}")
+            new Claim("username", user.UserName!),
+            new Claim(ClaimTypes.Role, user.Role?.Name!),
+            new Claim("roleName", user.Role?.Name!),
+            new Claim("email", user.Email!),
+            new Claim("firstname",user.FirstName! ),
+            new Claim("lastname",user.LastName! )
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authenticationSettings.Key!));
@@ -55,23 +61,9 @@ public class UserService : IUserService
 
         // log information to UserSessions table
         await _loggingService.LogLoginInformation(user.Id);
+        var generatedToken = tokenHandler.WriteToken(token);
 
-        return tokenHandler.WriteToken(token);
-
-        //string tokenString = tokenHandler.WriteToken(token);
-
-        //if (tokenString is null) return null;
-
-        //var userDto = new UserDto()
-        //{
-        //    Id = user.Id,
-        //    Email = user.Email,
-        //    Username = user.Username,
-        //    Role = user.Role?.Name,
-        //    Token = tokenString
-        //};
-
-        //return userDto;
+        return new Result<string> { Success = true, Value = generatedToken };
     }
 
     public async Task<string?> RegisterUserAsync(UserRegisterDto dto)
@@ -79,14 +71,28 @@ public class UserService : IUserService
         var validationResult = await _userRegisterValidator.ValidateAsync(dto);
         if (!validationResult.IsValid) return validationResult.Errors.FirstOrDefault()?.ErrorMessage;
 
-        if (await _userRepository.GetUserAsync(dto.Username!, dto.Email!) != null) return UserErrorMessages.UserAlreadyExistsError;
+        if (await _userRepository.GetUserAsync(dto.UserName!, dto.Email!) != null) return UserErrorMessages.UserAlreadyExistsError;
 
         var user = _mapper.Map<User>(dto);
         if (user is null) return GeneralErrorMessages.GeneralError;
 
         user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+        user.AccountConfirmed = false;
         await _userRepository.AddNewUserAsync(user);
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+    }
+
+    public async Task<bool> ConfirmAccountAsync(string email, string code)
+    {
+        if (code == "111111")
+        {
+            var user = await _userRepository.GetUserByEmailAsync(email, false);
+            if (user is null) return false;
+
+            user.AccountConfirmed = true;
+            return await _userRepository.SaveAsync();
+        }
+        return false;
     }
 
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)

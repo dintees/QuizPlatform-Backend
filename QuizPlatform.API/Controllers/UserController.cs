@@ -23,8 +23,8 @@ public class UserController : ControllerBase
     public async Task<ActionResult> Login(UserLoginDto dto)
     {
         var token = await _userService.LoginAndGenerateJwtTokenAsync(dto);
-        if (token is null) return Unauthorized("Bad username or password.");
-        return Ok(token);
+        if (token.Success) return Ok(token.Value);
+        return Unauthorized(token.ErrorMessage);
     }
 
     [HttpPost("register")]
@@ -32,8 +32,16 @@ public class UserController : ControllerBase
     {
         var registrationError = await _userService.RegisterUserAsync(dto);
         if (registrationError is null)
-            return await Login(new UserLoginDto { Email = dto.Email, Password = dto.Password });
+            return Ok();
         return BadRequest(registrationError);
+    }
+
+    [HttpPost("confirmAccount/{code}")]
+    public async Task<ActionResult> ConfirmAccount(UserRegisterDto dto, [FromRoute] string code)
+    {
+        bool confirmed = dto.Email != null && await _userService.ConfirmAccountAsync(dto.Email, code);
+        if (confirmed) return await Login(new UserLoginDto { Email = dto.Email, Password = dto.Password });
+        return BadRequest(UserErrorMessages.AccountNotConfirmed);
     }
 
     [Authorize]

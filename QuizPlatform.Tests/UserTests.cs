@@ -73,13 +73,13 @@ namespace QuizPlatform.Tests
 
         [Theory]
         [InlineData("test", null, "12345678", "12345678", 1, UserErrorMessages.EmptyEmail)]
-        [InlineData(null, "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyUsername)]
+        [InlineData(null, "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyUserName)]
         [InlineData("test", "test@test.pl", null, null, 1, UserErrorMessages.EmptyPassword)]
 
         public async Task RegisterUserAsync_ForEmptyFields_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
             // Arrange
-            var user = new UserRegisterDto { Username = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
+            var user = new UserRegisterDto { UserName = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
             // Act
             var register = await _service.RegisterUserAsync(user);
@@ -97,7 +97,7 @@ namespace QuizPlatform.Tests
         public async Task RegisterUserAsync_ForIncorrectValues_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
             // Arrange
-            var user = new UserRegisterDto { Username = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
+            var user = new UserRegisterDto { UserName = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
             // Act
             var register = await _service.RegisterUserAsync(user);
@@ -111,7 +111,7 @@ namespace QuizPlatform.Tests
         public async Task RegisterUserAsync_ForTheSameUsernameAndPassword_ReturnsTrueAndRegisterUser()
         {
             // Arrange
-            var user = new UserRegisterDto { Username = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
+            var user = new UserRegisterDto { UserName = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
 
             // Act
             var register = await _service.RegisterUserAsync(user);
@@ -159,9 +159,9 @@ namespace QuizPlatform.Tests
         {
             var users = new List<User>
             {
-                new User {Id = 1, Email = "a@a.pl", Username = "AdamAbacki", Password = HashPassword("aaaaaaaa"), Role = new Role { Name = "Admin"} },
-                new User {Id = 2, Email = "b@b.pl", Username = "BartoszBabacki", Password = HashPassword("bbbbbbbb"), Role = new Role { Name = "Teacher"} },
-                new User {Id = 3, Email = "c@c.pl", Username = "CezaryCadacki", Password = HashPassword("cccccccc"), Role = new Role { Name = "User"} },
+                new User {Id = 1, Email = "a@a.pl", UserName = "AdamAbacki", FirstName = "Adam", LastName = "Abacki", Password = HashPassword("aaaaaaaa"), Role = new Role { Name = "Admin"} },
+                new User {Id = 2, Email = "b@b.pl", UserName = "BartoszBabacki", FirstName = "Bartosz", LastName = "Babacki", Password = HashPassword("bbbbbbbb"), Role = new Role { Name = "Teacher"} },
+                new User {Id = 3, Email = "c@c.pl", UserName = "CezaryCadacki", FirstName = "Cezary", LastName = "Cadacki", Password = HashPassword("cccccccc"), Role = new Role { Name = "User"} },
             };
             return users;
         }
@@ -169,9 +169,9 @@ namespace QuizPlatform.Tests
         private Mock<IUserRepository> GetUserRepositoryMock(List<User> users)
         {
             var userRepositoryMock = new Mock<IUserRepository>();
-            userRepositoryMock.Setup(x => x.GetUserByEmail(It.IsAny<string>())).Returns((string email) => Task.FromResult(users.FirstOrDefault(e => e.Email == email)));
-            userRepositoryMock.Setup(x => x.GetUserByIdAsync(It.IsAny<int>())).Returns((int id) => Task.FromResult(users.FirstOrDefault(e => e.Id == id)));
-            userRepositoryMock.Setup(x => x.GetUserAsync(It.IsAny<string>(), It.IsAny<string>())).Returns((string username, string email) => Task.FromResult(users.FirstOrDefault(e => e.Username == username || e.Email == email)));
+            userRepositoryMock.Setup(x => x.GetUserByEmailAsync(It.IsAny<string>(), It.IsAny<bool>())).Returns((string email, bool readOnly) => Task.FromResult(users.FirstOrDefault(e => e.Email == email)));
+            userRepositoryMock.Setup(x => x.GetUserByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool readOnly) => Task.FromResult(users.FirstOrDefault(e => e.Id == id)));
+            userRepositoryMock.Setup(x => x.GetUserAsync(It.IsAny<string>(), It.IsAny<string>())).Returns((string username, string email) => Task.FromResult(users.FirstOrDefault(e => e.UserName == username || e.Email == email)));
             userRepositoryMock.Setup(x => x.AddNewUserAsync(It.IsAny<User>())).Returns((User user) => { users.Add(user); return Task.CompletedTask; });
             userRepositoryMock.Setup(x => x.SaveAsync()).Returns(Task.FromResult(true));
             return userRepositoryMock;
