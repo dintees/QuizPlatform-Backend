@@ -1,6 +1,6 @@
 ﻿namespace QuizPlatform.Infrastructure.Enums
 {
-    public enum QuestionTypeName
+    public enum QuestionType
     {
         SingleChoice,
         MultipleChoice,

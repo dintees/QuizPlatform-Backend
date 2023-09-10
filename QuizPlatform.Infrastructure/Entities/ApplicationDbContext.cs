@@ -12,6 +12,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionAnswer> Answers { get; set; }
     public DbSet<Set> Sets { get; set; }
+    public DbSet<UserToken> UserTokens { get; set; }
     //public DbSet<QuestionSet> QuestionSets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

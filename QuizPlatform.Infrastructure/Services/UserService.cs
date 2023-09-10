@@ -19,15 +19,17 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly ILoggingService _loggingService;
     private readonly IUserRepository _userRepository;
+    private readonly IUserTokenRepository _userTokenRepository;
     private readonly IValidator<UserRegisterDto> _userRegisterValidator;
     private readonly IValidator<ChangeUserPasswordDto> _changeUserPasswordValidator;
 
-    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
+    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository, IUserTokenRepository userTokenRepository, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
     {
         _mapper = mapper;
         _authenticationSettings = authenticationSettings;
         _loggingService = loggingService;
         _userRepository = userRepository;
+        _userTokenRepository = userTokenRepository;
         _userRegisterValidator = userRegisterValidator;
         _changeUserPasswordValidator = changeUserPasswordValidator;
     }
@@ -79,16 +81,27 @@ public class UserService : IUserService
         user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
         user.AccountConfirmed = false;
         await _userRepository.AddNewUserAsync(user);
+
+        await _userRepository.SaveAsync(); //  ? null : GeneralErrorMessages.GeneralError;
+
+        var a = new UserToken { Token = "12341234", UserId = user.Id, ExpirationTIme = DateTime.Now.AddMinutes(30) };
+        await _userTokenRepository.AddAsync(a);
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
     public async Task<bool> ConfirmAccountAsync(string email, string code)
     {
-        if (code != "111111") return false;
         var user = await _userRepository.GetUserByEmailAsync(email, false);
         if (user is null) return false;
 
+        var correctConfirmationCode = await _userTokenRepository.GetByUserIdAsync(user.Id);
+        if (correctConfirmationCode is null) return false;
+
+        if (code != correctConfirmationCode.Token) return false;
+
         user.AccountConfirmed = true;
+
+        // TODO delete token from UserTokens Entity
         return await _userRepository.SaveAsync();
     }
 

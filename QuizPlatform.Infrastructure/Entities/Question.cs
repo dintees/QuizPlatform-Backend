@@ -6,7 +6,7 @@ public class Question
 {
     public int Id { get; set; }
     public string? Content { get; set; }
-    public QuestionTypeName QuestionType { get; set; }
+    public QuestionType QuestionType { get; set; }
     public bool IsDeleted { get; set; }
     public Set? Set { get; set; }
     public int SetId { get; set; }

@@ -48,7 +48,7 @@ namespace QuizPlatform.Tests
             Assert.IsType<QuestionDto>(question);
             Assert.Equal("Question 2", question.Question);
             Assert.Equal(3, question.Answers?.Count);
-            Assert.Equal(QuestionTypeName.MultipleChoice, question.QuestionType);
+            Assert.Equal(QuestionType.MultipleChoice, question.QuestionType);
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = null,
-                QuestionType = QuestionTypeName.SingleChoice,
+                QuestionType = QuestionType.SingleChoice,
                 Answers = new List<CreateAnswerDto> { new CreateAnswerDto { Answer = "a", Correct = true} }
             };
 
@@ -73,7 +73,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Question",
-                QuestionType = QuestionTypeName.SingleChoice,
+                QuestionType = QuestionType.SingleChoice,
                 Answers = null
             };
 
@@ -89,7 +89,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Question",
-                QuestionType = QuestionTypeName.TrueFalse,
+                QuestionType = QuestionType.TrueFalse,
                 Answers = new List<CreateAnswerDto>
                 {
                     new CreateAnswerDto { Answer = "A1", Correct = true },
@@ -110,7 +110,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Question",
-                QuestionType = QuestionTypeName.SingleChoice,
+                QuestionType = QuestionType.SingleChoice,
                 Answers = new List<CreateAnswerDto>
                 {
                     new CreateAnswerDto { Answer = "A1", Correct = true },
@@ -132,7 +132,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Question",
-                QuestionType = QuestionTypeName.ShortAnswer,
+                QuestionType = QuestionType.ShortAnswer,
                 Answers = new List<CreateAnswerDto> { new CreateAnswerDto { Answer = "test", Correct = false } }
             };
 
@@ -149,7 +149,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "New question",
-                QuestionType = QuestionTypeName.SingleChoice,
+                QuestionType = QuestionType.SingleChoice,
                 Answers = new List<CreateAnswerDto> { new CreateAnswerDto { Answer = "a", Correct = false }, new CreateAnswerDto { Answer = "b", Correct = true } }
             };
 
@@ -168,7 +168,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Question",
-                QuestionType = QuestionTypeName.TrueFalse,
+                QuestionType = QuestionType.TrueFalse,
                 Answers = new List<CreateAnswerDto>
                 {
                     new CreateAnswerDto { Answer = "A1", Correct = true },
@@ -189,7 +189,7 @@ namespace QuizPlatform.Tests
             var question = new CreateQuestionDto
             {
                 Question = "Edited question",
-                QuestionType = QuestionTypeName.SingleChoice,
+                QuestionType = QuestionType.SingleChoice,
                 Answers = new List<CreateAnswerDto> { new CreateAnswerDto { Answer = "a", Correct = false }, new CreateAnswerDto { Answer = "b", Correct = true } }
             };
 
@@ -244,7 +244,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 1,
                     Content = "Question 1",
-                    QuestionType = QuestionTypeName.SingleChoice,
+                    QuestionType = QuestionType.SingleChoice,
                     Answers = new List<QuestionAnswer> {
                         new QuestionAnswer
                         {
@@ -268,7 +268,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 2,
                     Content = "Question 2",
-                    QuestionType = QuestionTypeName.MultipleChoice,
+                    QuestionType = QuestionType.MultipleChoice,
                     Answers = new List<QuestionAnswer> {
                         new QuestionAnswer
                         {
@@ -292,7 +292,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 3,
                     Content = "Question 3",
-                    QuestionType = QuestionTypeName.ShortAnswer,
+                    QuestionType = QuestionType.ShortAnswer,
                     Answers = null,
                     IsDeleted = false,
                 }

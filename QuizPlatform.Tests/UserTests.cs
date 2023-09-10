@@ -8,6 +8,7 @@ using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.User;
 using QuizPlatform.Infrastructure.Profiles;
+using QuizPlatform.Infrastructure.Repositories;
 using QuizPlatform.Infrastructure.Services;
 
 namespace QuizPlatform.Tests
@@ -38,8 +39,9 @@ namespace QuizPlatform.Tests
 
             IValidator<UserRegisterDto> userRegisterValidator = new UserRegisterValidator();
             IValidator<ChangeUserPasswordDto> changeUserPasswordValidator = new ChangeUserPasswordValidator();
+            var userTokenRepository = new Mock<UserTokenRepository>();
 
-            _service = new UserService(authenticationSettings, mapper, loggingService.Object, userRepositoryMock.Object, userRegisterValidator, changeUserPasswordValidator);
+            _service = new UserService(authenticationSettings, mapper, loggingService.Object, userRepositoryMock.Object, userTokenRepository.Object, userRegisterValidator, changeUserPasswordValidator);
         }
 
         [Theory]

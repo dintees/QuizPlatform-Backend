@@ -13,7 +13,7 @@ namespace QuizPlatform.API.Validation
             RuleFor(m => m.QuestionType).IsInEnum().WithMessage(QuestionErrorMessages.InvalidQuestionType);
             RuleFor(e => e).Custom((e, context) =>
             {
-                if (e.QuestionType == QuestionTypeName.MultipleChoice || e.QuestionType == QuestionTypeName.SingleChoice)
+                if (e.QuestionType == QuestionType.MultipleChoice || e.QuestionType == QuestionType.SingleChoice)
                 {
                     if (e.Answers is null || e.Answers.Count == 0)
                     {
@@ -21,12 +21,12 @@ namespace QuizPlatform.API.Validation
                     }
                 }
 
-                if (e.QuestionType == QuestionTypeName.SingleChoice) {
+                if (e.QuestionType == QuestionType.SingleChoice) {
                     var count = e.Answers?.Where(n => n.Correct == true).Count();
                     if (count != 1) context.AddFailure("Answers", QuestionErrorMessages.OneAnswerShouldBeCorrect);
                 }
 
-                if (e.QuestionType == QuestionTypeName.TrueFalse)
+                if (e.QuestionType == QuestionType.TrueFalse)
                 {
                     if (e.Answers is null || e.Answers.Count != 2)
                     {

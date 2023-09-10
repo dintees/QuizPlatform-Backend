@@ -230,7 +230,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 1,
                     Content = "Question 1 set 1",
-                    QuestionType = QuestionTypeName.ShortAnswer,
+                    QuestionType = QuestionType.ShortAnswer,
                     Answers = new List<QuestionAnswer>
                     {
                         new QuestionAnswer
@@ -255,7 +255,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 2,
                     Content = "Question 2",
-                    QuestionType = QuestionTypeName.ShortAnswer,
+                    QuestionType = QuestionType.ShortAnswer,
                     Answers = new List<QuestionAnswer>
                     {
                         new QuestionAnswer
@@ -275,7 +275,7 @@ namespace QuizPlatform.Tests
                 {
                     Id = 3,
                     Content = "Question 2 set 1",
-                    QuestionType = QuestionTypeName.TrueFalse,
+                    QuestionType = QuestionType.TrueFalse,
                     Answers = new List<QuestionAnswer>
                     {
                         new QuestionAnswer
@@ -312,7 +312,7 @@ namespace QuizPlatform.Tests
                             {
                                 Id = 1,
                                 Content = "Question 1 set 1",
-                                QuestionType = QuestionTypeName.ShortAnswer,
+                                QuestionType = QuestionType.ShortAnswer,
                                 Answers = new List<QuestionAnswer> {
                                     new QuestionAnswer
                                     {
@@ -336,7 +336,7 @@ namespace QuizPlatform.Tests
                             {
                                 Id = 3,
                                 Content = "Question 2 set 1",
-                                QuestionType = QuestionTypeName.TrueFalse,
+                                QuestionType = QuestionType.TrueFalse,
                                 Answers = new List<QuestionAnswer> {
                                     new QuestionAnswer
                                     {
