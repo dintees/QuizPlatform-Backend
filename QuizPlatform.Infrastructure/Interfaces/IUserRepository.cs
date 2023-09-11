@@ -8,7 +8,8 @@ namespace QuizPlatform.Infrastructure.Interfaces
         Task<User?> GetUserByEmailAsync(string email, bool readOnly = true);
         Task<User?> GetUserByIdAsync(int id, bool readOnly = true);
         Task<User?> GetUserAsync(string username, string email);
-        Task<bool> SaveAsync();
+        void DeleteUser(User user);
         void UpdateUser(User user);
+        Task<bool> SaveAsync();
     }
 }

@@ -82,10 +82,10 @@ public class UserService : IUserService
         user.AccountConfirmed = false;
         await _userRepository.AddNewUserAsync(user);
 
-        await _userRepository.SaveAsync(); //  ? null : GeneralErrorMessages.GeneralError;
+        await _userRepository.SaveAsync();
 
-        var a = new UserToken { Token = "12341234", UserId = user.Id, ExpirationTIme = DateTime.Now.AddMinutes(30) };
-        await _userTokenRepository.AddAsync(a);
+        var userToken = new UserToken { Token = GenerateToken(8), UserId = user.Id, ExpirationTime = DateTime.Now.AddMinutes(30) };
+        await _userTokenRepository.AddAsync(userToken);
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
@@ -94,15 +94,22 @@ public class UserService : IUserService
         var user = await _userRepository.GetUserByEmailAsync(email, false);
         if (user is null) return false;
 
-        var correctConfirmationCode = await _userTokenRepository.GetByUserIdAsync(user.Id);
-        if (correctConfirmationCode is null) return false;
+        var userToken = await _userTokenRepository.GetByUserIdAsync(user.Id);
+        if (userToken is null) return false;
+        if (userToken.ExpirationTime < DateTime.Now)
+        {
+            _userRepository.DeleteUser(user);
+            _userTokenRepository.DeleteToken(userToken);
+            await _userTokenRepository.SaveAsync();
+            await _userRepository.SaveAsync();
+            return false;
+        }
 
-        if (code != correctConfirmationCode.Token) return false;
+        if (code != userToken.Token) return false;
 
         user.AccountConfirmed = true;
-
-        // TODO delete token from UserTokens Entity
-        return await _userRepository.SaveAsync();
+        _userTokenRepository.DeleteToken(userToken);
+        return await _userTokenRepository.SaveAsync() && await _userRepository.SaveAsync();
     }
 
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
@@ -119,5 +126,14 @@ public class UserService : IUserService
 
         _userRepository.UpdateUser(foundUser);
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+    }
+
+    private string GenerateToken(int size)
+    {
+        Random rand = new Random();
+        StringBuilder tokenBuilder = new StringBuilder();
+        for (int i = 0; i < size; ++i)
+            tokenBuilder.Append(rand.Next(10));
+        return tokenBuilder.ToString();
     }
 }

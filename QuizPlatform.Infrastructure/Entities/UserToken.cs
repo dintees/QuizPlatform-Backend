@@ -6,6 +6,6 @@
         public string? Token { get; set; }
         public User? User { get; set; }
         public int UserId { get; set; }
-        public DateTime ExpirationTIme { get; set; }
+        public DateTime ExpirationTime { get; set; }
     }
 }

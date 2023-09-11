@@ -44,6 +44,11 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context.Entry(user).State = EntityState.Modified;
         }
 
+        public void DeleteUser(User user)
+        {
+            _context.Entry(user).State = EntityState.Deleted;
+        }
+
         public async Task<bool> SaveAsync()
         {
             foreach (var entityEntry in _context.ChangeTracker.Entries<Entity>())
