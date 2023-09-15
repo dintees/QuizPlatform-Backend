@@ -112,6 +112,17 @@ public class UserService : IUserService
         return await _userTokenRepository.SaveAsync() && await _userRepository.SaveAsync();
     }
 
+    public async Task<string?> ChangeUserPropertiesAsync(int userId, ChangeUserPropertiesDto dto)
+    {
+        var user = await _userRepository.GetUserByIdAsync(userId, false);
+        if (user is null) return UserErrorMessages.PersonWithThisIdDoesNotExist;
+
+        user.FirstName = dto.FirstName;
+        user.LastName = dto.LastName;
+
+        return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+    }
+    
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
     {
         var foundUser = await _userRepository.GetUserByIdAsync(id);

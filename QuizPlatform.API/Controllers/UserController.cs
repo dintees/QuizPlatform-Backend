@@ -13,10 +13,12 @@ namespace QuizPlatform.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IUserContextService _userContextService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IUserContextService userContextService)
     {
         _userService = userService;
+        _userContextService = userContextService;
     }
 
     [HttpPost("login")]
@@ -42,6 +44,19 @@ public class UserController : ControllerBase
         bool confirmed = dto.Email != null && await _userService.ConfirmAccountAsync(dto.Email, code);
         if (confirmed) return await Login(new UserLoginDto { Email = dto.Email, Password = dto.Password });
         return BadRequest(UserErrorMessages.AccountNotConfirmed);
+    }
+
+    [Authorize]
+    [HttpPut("edit")]
+    public async Task<ActionResult> ChangeUserProperties(ChangeUserPropertiesDto dto)
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null)
+            return BadRequest();
+
+        var result= await _userService.ChangeUserPropertiesAsync(userId.Value, dto);
+        if (result is null) return Ok();
+        return BadRequest(result);
     }
 
     [Authorize]
