@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using QuizPlatform.Infrastructure;
+using QuizPlatform.Infrastructure.Entities;
 
 namespace QuizPlatform.Service
 {
@@ -10,6 +13,13 @@ namespace QuizPlatform.Service
             var builder = new HostBuilder()
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddScoped<IDatabaseCleaner, DatabaseCleaner>();
+                    services.AddDbContext<ApplicationDbContext>(options =>
+                    {
+                        options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=QuizPlatform;Trusted_Connection=True;");
+                    });
+                    services.AddInfrastructure();
+
                     services.AddHostedService<BackgroundWorker>();
                 });
 

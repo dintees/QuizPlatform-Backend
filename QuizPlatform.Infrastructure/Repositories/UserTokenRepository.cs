@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Interfaces;
 
@@ -21,6 +22,11 @@ namespace QuizPlatform.Infrastructure.Repositories
         public async Task AddAsync(UserToken entity)
         {
             await _context.UserTokens.AddAsync(entity);
+        }
+
+        public async Task<List<UserToken>?> GetAllAsync(Expression<Func<UserToken, bool>> expression)
+        {
+            return await _context.UserTokens.Where(expression).ToListAsync();
         }
 
         public void DeleteToken(UserToken userToken)

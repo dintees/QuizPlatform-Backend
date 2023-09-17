@@ -1,6 +1,5 @@
 ﻿using EducationPlatform.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
-using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Repositories;
 using QuizPlatform.Infrastructure.Services;
