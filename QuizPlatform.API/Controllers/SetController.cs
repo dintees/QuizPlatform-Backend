@@ -66,7 +66,7 @@ public class SetController : ControllerBase
     public async Task<ActionResult> AddQuestionToSet(int setId, [FromBody] int questionId)
     {
         bool edited = await _setService.AddQuestionToSetAsync(setId, questionId);
-        
+
         if (edited) return Ok();
         return BadRequest();
     }
@@ -78,6 +78,18 @@ public class SetController : ControllerBase
         var result = await _setService.ModifySet(id, setDto);
         if (result.Success) return Ok(result);
         return BadRequest(result);
+    }
+
+    [Authorize]
+    [HttpPost("duplicate/{setId:int}")]
+    public async Task<ActionResult> DuplicateSet(int setId)
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null) return Unauthorized();
+
+        var result = await _setService.DuplicateSetAsync(setId, userId.Value);
+        if (result.Success) return Ok(result);
+        return BadRequest(result.ErrorMessage);
     }
 
     [HttpDelete("removeQuestion/{setId:int}")]

@@ -81,7 +81,7 @@ public class SetService : ISetService
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
         if (set is null)
-            return new Result<SetDto> { Success = false, ErrorMessage = "Set not found." };
+            return new Result<SetDto> { Success = false, ErrorMessage = SetErrorMessages.NotFound };
 
         var validationResult = await _setValidator.ValidateAsync(_mapper.Map<Set>(dto));
         if (!validationResult.IsValid)
@@ -93,6 +93,26 @@ public class SetService : ISetService
 
         var modified = await _setRepository.SaveAsync();
         return modified ? new Result<SetDto> { Success = true, Value = _mapper.Map<SetDto>(set) } : new Result<SetDto> { Success = false, ErrorMessage = "Something went wrong" };
+    }
+
+    public async Task<Result<int>> DuplicateSetAsync(int setId, int userId)
+    {
+        var set = await _setRepository.GetSetWithQuestionsByIdAsync(setId);
+        if (set is null)
+            return new Result<int> { Success = false, ErrorMessage = SetErrorMessages.NotFound};
+
+        var newSet = new Set()
+        {
+            Title = string.Concat(set.Title, " - Copy"),
+            Description = set.Description,
+            Questions = set.Questions?.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct}).ToList()}).ToList(),
+            UserId = userId
+        };
+
+        await _setRepository.InsertSetAsync(newSet);
+        return await _setRepository.SaveAsync() ?
+                new Result<int> { Success = true, Value = newSet.Id} : 
+                new Result<int> { Success = false, ErrorMessage = "Something went wrong." };
     }
 
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)

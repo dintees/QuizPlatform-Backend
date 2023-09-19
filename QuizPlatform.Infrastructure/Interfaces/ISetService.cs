@@ -14,4 +14,5 @@ public interface ISetService
     Task<bool> DeleteByIdAsync(int id);
     Task<Result<SetDto>> CreateNewSetWithQuestionsAsync(CreateSetDto dto, int userId);
     Task<Result<SetDto>> ModifySet(int id, CreateSetDto dto);
+    Task<Result<int>> DuplicateSetAsync(int setId, int userId);
 }
