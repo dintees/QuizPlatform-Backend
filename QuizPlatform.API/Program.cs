@@ -29,6 +29,11 @@ var authenticationSettings = new AuthenticationSettings();
 builder.Configuration.GetSection("JWT").Bind(authenticationSettings);
 builder.Services.AddSingleton(authenticationSettings);
 
+// Email configuration
+var emailConfiguration = new EmailConfiguration();
+builder.Configuration.GetSection("EmailConfiguration").Bind(emailConfiguration);
+builder.Services.AddSingleton(emailConfiguration);
+
 builder.Services.AddAuthentication(option =>
 {
     option.DefaultAuthenticateScheme = "Bearer";

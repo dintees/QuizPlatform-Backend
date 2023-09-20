@@ -35,6 +35,7 @@ public class TestService : ITestService
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(id);
         if (set is null) return null;
+        set.Questions = set.Questions?.Where(q => !q.IsDeleted).ToList();
 
         var setDto = _mapper.Map<TestDto>(set);
         return setDto;
