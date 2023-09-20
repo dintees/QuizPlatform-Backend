@@ -4,11 +4,11 @@ namespace QuizPlatform.Service
 {
     public class DatabaseCleaner : IDatabaseCleaner
     {
-        private readonly ISetRepository _setRepository;
+        private readonly ITestRepository _setRepository;
         private readonly IUserTokenRepository _userTokenRepository;
         private readonly IUserRepository _userRepository;
 
-        public DatabaseCleaner(ISetRepository setRepository, IUserTokenRepository userTokenRepository, IUserRepository userRepository)
+        public DatabaseCleaner(ITestRepository setRepository, IUserTokenRepository userTokenRepository, IUserRepository userRepository)
         {
             _setRepository = setRepository;
             _userTokenRepository = userTokenRepository;

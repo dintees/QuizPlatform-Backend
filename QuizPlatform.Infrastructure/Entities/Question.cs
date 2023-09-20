@@ -9,10 +9,10 @@ public class Question
     public QuestionType QuestionType { get; set; }
     public bool IsDeleted { get; set; }
     public bool MathMode { get; set; }
-    public Set? Set { get; set; }
+    public Test? Set { get; set; }
     public int SetId { get; set; }
     public ICollection<QuestionAnswer>? Answers { get; set; }
 
-    //public ICollection<Set>? Sets { get; set; }
-    //public ICollection<QuestionSet>? Sets { get; set; }
+    //public ICollection<Test>? Tests { get; set; }
+    //public ICollection<QuestionSet>? Tests { get; set; }
 }

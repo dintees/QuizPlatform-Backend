@@ -1,6 +1,6 @@
 ﻿namespace QuizPlatform.Infrastructure.Entities;
 
-public class Set : Entity
+public class Test : Entity
 {
     public string? Title { get; set; }
     public string? Description { get; set; }

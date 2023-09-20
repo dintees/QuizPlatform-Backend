@@ -7,20 +7,20 @@ using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
-using QuizPlatform.Infrastructure.Models.Set;
+using QuizPlatform.Infrastructure.Models.Test;
 using QuizPlatform.Infrastructure.Profiles;
 using QuizPlatform.Infrastructure.Services;
 
 namespace QuizPlatform.Tests
 {
-    public class SetTests
+    public class TestTests
     {
-        private readonly SetService _service;
+        private readonly TestService _service;
 
-        public SetTests()
+        public TestTests()
         {
-            var sets = GetSets();
-            var setRepositoryMock = GetSetRepositoryMock(sets);
+            var tests = GetTests();
+            var setRepositoryMock = GetSetRepositoryMock(tests);
 
             var mapperConfiguration = new MapperConfiguration(c =>
             {
@@ -44,9 +44,9 @@ namespace QuizPlatform.Tests
             //    Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = "a", Correct = true } }
             //});
 
-            IValidator<Set> setValidator = new SetValidator();
+            IValidator<Test> setValidator = new TestValidator();
 
-            _service = new SetService(mapper, setRepositoryMock.Object, questionRepositoryMock.Object, setValidator);
+            _service = new TestService(mapper, setRepositoryMock.Object, questionRepositoryMock.Object, setValidator);
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task CreateNewSetAsync_ForEmptyTitle_ReturnsResultObjectWithErrorMessage()
         {
-            var set = new CreateSetDto
+            var set = new CreateTestDto
             {
                 Description = "Description"
             };
@@ -79,7 +79,7 @@ namespace QuizPlatform.Tests
             var result = await _service.CreateNewSetAsync(set, 1);
 
             Assert.False(result.Success);
-            Assert.Equal(SetErrorMessages.EmptySetTitle, result.ErrorMessage);
+            Assert.Equal(TestErrorMessages.EmptySetTitle, result.ErrorMessage);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace QuizPlatform.Tests
         {
             const string title = "New title";
 
-            var set = new CreateSetDto
+            var set = new CreateTestDto
             {
                 Title = title,
                 Description = "Description"
@@ -103,20 +103,20 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task ModifySetPropertiesAsync_ForEmptyTitleAttribute_ReturnsErrorMessage()
         {
-            var setOptions = new SetDto { Description = "New description" };
+            var setOptions = new TestDto { Description = "New description" };
 
             var result = await _service.ModifySetPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
 
             Assert.False(result.Success);
-            Assert.Equal(SetErrorMessages.EmptySetTitle, result.ErrorMessage);
-            Assert.Equal("Set 2", foundSet?.Title);
+            Assert.Equal(TestErrorMessages.EmptySetTitle, result.ErrorMessage);
+            Assert.Equal("Test 2", foundSet?.Title);
         }
 
         [Fact]
         public async Task ModifySetPropertiesAsync_ForCorrectSetObject_ReturnsSuccessFalseResult()
         {
-            var setOptions = new SetDto { Title = "New title", Description = "New description" };
+            var setOptions = new TestDto { Title = "New title", Description = "New description" };
 
             var result = await _service.ModifySetPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
@@ -200,15 +200,15 @@ namespace QuizPlatform.Tests
             Assert.True(isDeleted);
         }
 
-        private Mock<ISetRepository> GetSetRepositoryMock(List<Set> sets)
+        private Mock<ITestRepository> GetSetRepositoryMock(List<Test> sets)
         {
-            var mock = new Mock<ISetRepository>();
+            var mock = new Mock<ITestRepository>();
             mock.Setup(x => x.GetSetWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
                 .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
             mock.Setup(x => x.GetSetByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
                 .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
-            mock.Setup(x => x.InsertSetAsync(It.IsAny<Set>()))
-                .Callback((Set set) =>
+            mock.Setup(x => x.InsertSetAsync(It.IsAny<Test>()))
+                .Callback((Test set) =>
                 {
                     set.Id = 3;
                     sets.Add(set);
@@ -295,14 +295,14 @@ namespace QuizPlatform.Tests
         }
 
 
-        private List<Set> GetSets()
+        private List<Test> GetTests()
     {
-        return new List<Set>
+        return new List<Test>
             {
-                new Set
+                new Test
                 {
                     Id = 1,
-                    Title = "Set 1",
+                    Title = "Test 1",
                     Description = "Description 1",
                     IsDeleted = false,
                     UserId = 5,
@@ -353,10 +353,10 @@ namespace QuizPlatform.Tests
                             }
                         },
                 },
-                new Set
+                new Test
                 {
                     Id = 2,
-                    Title = "Set 2",
+                    Title = "Test 2",
                     Description = "Description 2",
                     IsDeleted = false,
                     UserId = 5,

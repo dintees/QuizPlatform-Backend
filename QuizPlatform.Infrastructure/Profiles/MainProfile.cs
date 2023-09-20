@@ -2,7 +2,7 @@
 using QuizPlatform.Infrastructure.Models.Question;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Models.User;
-using QuizPlatform.Infrastructure.Models.Set;
+using QuizPlatform.Infrastructure.Models.Test;
 
 namespace QuizPlatform.Infrastructure.Profiles;
 
@@ -27,18 +27,18 @@ public class MainProfile : Profile
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
         //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
 
-        // Set
-        CreateMap<Set, SetDto>();
-        CreateMap<SetDto, Set>();
-        CreateMap<CreateSetDto, Set>();
+        // Test
+        CreateMap<Test, TestDto>();
+        CreateMap<TestDto, Test>();
+        CreateMap<CreateTestDto, Test>();
 
-        CreateMap<QuestionSet, QuestionDto>()
+        CreateMap<QuestionTest, QuestionDto>()
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Question!.Content))
             .ForMember(m => m.Id, o => o.MapFrom(s => s.Question!.Id))
             .ForMember(m => m.QuestionType, o => o.MapFrom(s => s.Question!.QuestionType))
             .ForMember(m => m.Answers, o => o.MapFrom(s => s.Question!.Answers!.Select(e => e.Content)));
 
-        CreateMap<Set, UserSetDto>()
+        CreateMap<Test, UserTestDto>()
             .ForMember(m => m.Author, o => o.MapFrom(s => s.User!.UserName));
     }
 }

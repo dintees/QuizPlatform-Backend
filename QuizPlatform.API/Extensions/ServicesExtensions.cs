@@ -15,7 +15,7 @@ namespace QuizPlatform.API.Extensions
             services.AddScoped<IValidator<UserRegisterDto>, UserRegisterValidator>();
             services.AddScoped<IValidator<ChangeUserPasswordDto>, ChangeUserPasswordValidator>();
             services.AddScoped<IValidator<Question>, QuestionValidator>();
-            services.AddScoped<IValidator<Set>, SetValidator>();
+            services.AddScoped<IValidator<Test>, TestValidator>();
 
             // SqlServer connection
             services.AddDbContext<ApplicationDbContext>(options =>

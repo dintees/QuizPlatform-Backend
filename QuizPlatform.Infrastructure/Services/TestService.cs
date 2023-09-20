@@ -5,18 +5,18 @@ using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
-using QuizPlatform.Infrastructure.Models.Set;
+using QuizPlatform.Infrastructure.Models.Test;
 
 namespace QuizPlatform.Infrastructure.Services;
 
-public class SetService : ISetService
+public class TestService : ITestService
 {
     private readonly IMapper _mapper;
-    private readonly ISetRepository _setRepository;
+    private readonly ITestRepository _setRepository;
     private readonly IQuestionRepository _questionRepository;
-    private readonly IValidator<Set> _setValidator;
+    private readonly IValidator<Test> _setValidator;
 
-    public SetService(IMapper mapper, ISetRepository setRepository, IQuestionRepository questionRepository, IValidator<Set> setValidator)
+    public TestService(IMapper mapper, ITestRepository setRepository, IQuestionRepository questionRepository, IValidator<Test> setValidator)
     {
         _mapper = mapper;
         _setRepository = setRepository;
@@ -24,25 +24,25 @@ public class SetService : ISetService
         _setValidator = setValidator;
     }
 
-    public async Task<List<UserSetDto>?> GetAllUserSets(int userId)
+    public async Task<List<UserTestDto>?> GetAllUserSets(int userId)
     {
         var sets = await _setRepository.GetSetsByUserIdAsync(userId);
 
-        return _mapper.Map<List<UserSetDto>?>(sets);
+        return _mapper.Map<List<UserTestDto>?>(sets);
     }
 
-    public async Task<SetDto?> GetByIdAsync(int id)
+    public async Task<TestDto?> GetByIdAsync(int id)
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(id);
         if (set is null) return null;
 
-        var setDto = _mapper.Map<SetDto>(set);
+        var setDto = _mapper.Map<TestDto>(set);
         return setDto;
     }
 
-    public async Task<Result<int>> CreateNewSetAsync(CreateSetDto dto, int userId)
+    public async Task<Result<int>> CreateNewSetAsync(CreateTestDto dto, int userId)
     {
-        var newSet = _mapper.Map<Set>(dto);
+        var newSet = _mapper.Map<Test>(dto);
         newSet.UserId = userId;
 
         var validationResult = await _setValidator.ValidateAsync(newSet);
@@ -54,9 +54,9 @@ public class SetService : ISetService
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<int>> ModifySetPropertiesAsync(int id, SetDto setDto)
+    public async Task<Result<int>> ModifySetPropertiesAsync(int id, TestDto testDto)
     {
-        var set = _mapper.Map<Set>(setDto);
+        var set = _mapper.Map<Test>(testDto);
         if (set is null)
             return new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
         var validationResult = await _setValidator.ValidateAsync(set);
@@ -66,7 +66,7 @@ public class SetService : ISetService
 
         var setEntity = await _setRepository.GetSetByIdAsync(id);
         if (setEntity is null)
-            return new Result<int> { Success = false, ErrorMessage = SetErrorMessages.NotFound };
+            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
         setEntity.Title = set.Title;
         setEntity.Description = set.Description;
@@ -77,31 +77,31 @@ public class SetService : ISetService
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<SetDto>> ModifySet(int id, CreateSetDto dto)
+    public async Task<Result<TestDto>> ModifySet(int id, CreateTestDto dto)
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
         if (set is null)
-            return new Result<SetDto> { Success = false, ErrorMessage = SetErrorMessages.NotFound };
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
-        var validationResult = await _setValidator.ValidateAsync(_mapper.Map<Set>(dto));
+        var validationResult = await _setValidator.ValidateAsync(_mapper.Map<Test>(dto));
         if (!validationResult.IsValid)
-            return new Result<SetDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         set.Title = dto.Title;
         set.Description = dto.Description;
         set.Questions = new List<Question>(_mapper.Map<IEnumerable<Question>>(dto.Questions));
 
         var modified = await _setRepository.SaveAsync();
-        return modified ? new Result<SetDto> { Success = true, Value = _mapper.Map<SetDto>(set) } : new Result<SetDto> { Success = false, ErrorMessage = "Something went wrong" };
+        return modified ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = "Something went wrong" };
     }
 
     public async Task<Result<int>> DuplicateSetAsync(int setId, int userId)
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(setId);
         if (set is null)
-            return new Result<int> { Success = false, ErrorMessage = SetErrorMessages.NotFound};
+            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound};
 
-        var newSet = new Set()
+        var newSet = new Test()
         {
             Title = string.Concat(set.Title, " - Copy"),
             Description = set.Description,
@@ -161,19 +161,19 @@ public class SetService : ISetService
         return await _setRepository.SaveAsync();
     }
 
-    public async Task<Result<SetDto>> CreateNewSetWithQuestionsAsync(CreateSetDto dto, int userId)
+    public async Task<Result<TestDto>> CreateNewSetWithQuestionsAsync(CreateTestDto dto, int userId)
     {
-        var set = _mapper.Map<Set>(dto);
+        var set = _mapper.Map<Test>(dto);
         set.UserId = userId;
 
         var validationResult = await _setValidator.ValidateAsync(set);
 
         if (!validationResult.IsValid)
-            return new Result<SetDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         await _setRepository.InsertSetAsync(set);
         var created = await _setRepository.SaveAsync();
 
-        return created ? new Result<SetDto> { Success = true, Value = _mapper.Map<SetDto>(set) } : new Result<SetDto> { Success = false, ErrorMessage = "Something went wrong" };
+        return created ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = "Something went wrong" };
     }
 }

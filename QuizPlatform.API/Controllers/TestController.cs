@@ -1,18 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
-using QuizPlatform.Infrastructure.Models.Set;
+using QuizPlatform.Infrastructure.Models.Test;
 
 namespace QuizPlatform.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SetController : ControllerBase
+public class TestController : ControllerBase
 {
-    private readonly ISetService _setService;
+    private readonly ITestService _setService;
     private readonly IUserContextService _userContextService;
 
-    public SetController(ISetService setService, IUserContextService userContextService)
+    public TestController(ITestService setService, IUserContextService userContextService)
     {
         _setService = setService;
         _userContextService = userContextService;
@@ -31,7 +31,7 @@ public class SetController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<SetDto?>> GetByIdAsync(int id)
+    public async Task<ActionResult<TestDto?>> GetByIdAsync(int id)
     {
         var set = await _setService.GetByIdAsync(id);
         if (set is null) return NotFound();
@@ -40,24 +40,24 @@ public class SetController : ControllerBase
 
     [Authorize]
     [HttpPost("create")]
-    public async Task<ActionResult> CreateSet(CreateSetDto setDto)
+    public async Task<ActionResult> CreateSet(CreateTestDto testDto)
     {
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var createdSetResult = await _setService.CreateNewSetAsync(setDto, userId.Value);
+        var createdSetResult = await _setService.CreateNewSetAsync(testDto, userId.Value);
         if (createdSetResult.Success) return Ok(createdSetResult);
         return BadRequest(createdSetResult.ErrorMessage);
     }
 
     [Authorize]
     [HttpPost("createWithQuestions")]
-    public async Task<ActionResult> CreateSetWithQuestions(CreateSetDto setDto)
+    public async Task<ActionResult> CreateSetWithQuestions(CreateTestDto testDto)
     {
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await _setService.CreateNewSetWithQuestionsAsync(setDto, userId.Value);
+        var result = await _setService.CreateNewSetWithQuestionsAsync(testDto, userId.Value);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }
@@ -73,9 +73,9 @@ public class SetController : ControllerBase
 
     [Authorize]
     [HttpPut("edit/{id:int}")]
-    public async Task<ActionResult> EditSetProperties(int id, CreateSetDto setDto)
+    public async Task<ActionResult> EditSetProperties(int id, CreateTestDto testDto)
     {
-        var result = await _setService.ModifySet(id, setDto);
+        var result = await _setService.ModifySet(id, testDto);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }

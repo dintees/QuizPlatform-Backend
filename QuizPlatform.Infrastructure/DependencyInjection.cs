@@ -12,13 +12,13 @@ namespace QuizPlatform.Infrastructure
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
-            services.AddScoped<ISetRepository, SetRepository>();
+            services.AddScoped<ITestRepository, TestRepository>();
             services.AddScoped<IUserTokenRepository, UserTokenRepository>();
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoggingService, LoggingService>();
             services.AddScoped<IQuestionService, QuestionService>();
-            services.AddScoped<ISetService, SetService>();
+            services.AddScoped<ITestService, TestService>();
 
             services.AddScoped<IUserContextService, UserContextService>();
 

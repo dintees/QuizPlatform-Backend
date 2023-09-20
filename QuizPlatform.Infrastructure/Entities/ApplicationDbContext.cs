@@ -11,7 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserSession> UserSessions { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionAnswer> Answers { get; set; }
-    public DbSet<Set> Sets { get; set; }
+    public DbSet<Test> Tests { get; set; }
     public DbSet<UserToken> UserTokens { get; set; }
     //public DbSet<QuestionSet> QuestionSets { get; set; }
 
@@ -20,7 +20,7 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        //modelBuilder.Entity<Set>().HasMany(d => d.Questions).WithMany(s => s.Sets).UsingEntity<QuestionSet>();
+        //modelBuilder.Entity<Test>().HasMany(d => d.Questions).WithMany(s => s.Tests).UsingEntity<QuestionSet>();
         //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId }); // to delete
     }
 }
