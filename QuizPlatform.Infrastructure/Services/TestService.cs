@@ -100,20 +100,52 @@ public class TestService : ITestService
     {
         var set = await _setRepository.GetSetWithQuestionsByIdAsync(setId);
         if (set is null)
-            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound};
+            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
         var newSet = new Test()
         {
             Title = string.Concat(set.Title, " - Copy"),
             Description = set.Description,
-            Questions = set.Questions?.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct}).ToList()}).ToList(),
+            Questions = set.Questions?.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct }).ToList() }).ToList(),
             UserId = userId
         };
 
         await _setRepository.InsertSetAsync(newSet);
         return await _setRepository.SaveAsync() ?
-                new Result<int> { Success = true, Value = newSet.Id} : 
+                new Result<int> { Success = true, Value = newSet.Id } :
                 new Result<int> { Success = false, ErrorMessage = "Something went wrong." };
+    }
+
+    public async Task<Result<TestDto>> CreateTestSession(CreateTestSessionDto dto)
+    {
+        var test = await _setRepository.GetSetWithQuestionsByIdAsync(dto.TestId);
+        if (test is null)
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
+
+        if (test.Questions is not null)
+        {
+            if (dto.ShuffleQuestions)
+                ShuffleArray(test.Questions);
+
+            //if (dto.ShuffleAnswers)
+            foreach (var question in test.Questions)
+            {
+                if (question.Answers is not null)
+                {
+                    foreach (var answer in question.Answers)
+                        answer.Correct = false;
+
+                    if (dto.ShuffleAnswers)
+                        ShuffleArray(question.Answers);
+                }
+            }
+        }
+
+        return new Result<TestDto>
+        {
+            Success = true,
+            Value = _mapper.Map<TestDto>(test)
+        };
     }
 
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)
@@ -176,5 +208,25 @@ public class TestService : ITestService
         var created = await _setRepository.SaveAsync();
 
         return created ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = "Something went wrong" };
+    }
+
+    private static void ShuffleArray<T>(ICollection<T>? coll)
+    {
+        if (coll is null)
+            return;
+
+        var rand = new Random();
+        var array = new T[coll.Count];
+        coll.CopyTo(array, 0);
+
+        for (int i = array.Length - 1; i > 0; --i)
+        {
+            var j = rand.Next(i + 1);
+            (array[i], array[j]) = (array[j], array[i]);
+        }
+
+        coll.Clear();
+        foreach (var elem in array)
+            coll.Add(elem);
     }
 }

@@ -12,6 +12,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionAnswer> Answers { get; set; }
     public DbSet<Test> Tests { get; set; }
+    public DbSet<TestSession> TestSessions { get; set; }
     public DbSet<UserToken> UserTokens { get; set; }
     //public DbSet<QuestionSet> QuestionSets { get; set; }
 
@@ -19,6 +20,9 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        modelBuilder.Entity<TestSession>().HasOne(e => e.User).WithOne().OnDelete(DeleteBehavior.Restrict);
+
 
         //modelBuilder.Entity<Test>().HasMany(d => d.Questions).WithMany(s => s.Tests).UsingEntity<QuestionSet>();
         //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId }); // to delete
