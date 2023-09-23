@@ -15,5 +15,4 @@ public interface ITestService
     Task<Result<TestDto>> CreateNewSetWithQuestionsAsync(CreateTestDto dto, int userId);
     Task<Result<TestDto>> ModifySet(int id, CreateTestDto dto);
     Task<Result<int>> DuplicateSetAsync(int setId, int userId);
-    Task<Result<TestDto>> CreateTestSession(CreateTestSessionDto dto);
 }

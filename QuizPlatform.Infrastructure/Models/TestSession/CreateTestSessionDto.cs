@@ -1,4 +1,4 @@
-﻿namespace QuizPlatform.Infrastructure.Models.Test
+﻿namespace QuizPlatform.Infrastructure.Models.TestSession
 {
     public class CreateTestSessionDto
     {

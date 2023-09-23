@@ -105,16 +105,4 @@ public class TestController : ControllerBase
         bool isDeleted = await _testService.DeleteByIdAsync(id);
         return isDeleted ? Ok() : BadRequest();
     }
-
-    [Authorize]
-    [HttpPost("createTestSession")]
-    public async Task<ActionResult> CreateTestSession(CreateTestSessionDto dto)
-    {
-        var result = await _testService.CreateTestSession(dto);
-
-        if (result.Success)
-            return Ok(result.Value);
-
-        return BadRequest(result.ErrorMessage);
-    }
 }

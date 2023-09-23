@@ -3,6 +3,7 @@ using QuizPlatform.Infrastructure.Models.Question;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Models.User;
 using QuizPlatform.Infrastructure.Models.Test;
+using QuizPlatform.Infrastructure.Models.TestSession;
 
 namespace QuizPlatform.Infrastructure.Profiles;
 
@@ -40,5 +41,10 @@ public class MainProfile : Profile
 
         CreateMap<Test, UserTestDto>()
             .ForMember(m => m.Author, o => o.MapFrom(s => s.User!.UserName));
+
+        // TestSession
+        CreateMap<CreateTestSessionDto, TestSession>();
+        CreateMap<TestSession, UserTestSessionDto>()
+            .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title));
     }
 }

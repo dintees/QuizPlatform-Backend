@@ -6,34 +6,35 @@ using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
 using QuizPlatform.Infrastructure.Models.Test;
+using QuizPlatform.Infrastructure.Models.TestSession;
 
 namespace QuizPlatform.Infrastructure.Services;
 
 public class TestService : ITestService
 {
     private readonly IMapper _mapper;
-    private readonly ITestRepository _setRepository;
+    private readonly ITestRepository _testRepository;
     private readonly IQuestionRepository _questionRepository;
     private readonly IValidator<Test> _setValidator;
 
-    public TestService(IMapper mapper, ITestRepository setRepository, IQuestionRepository questionRepository, IValidator<Test> setValidator)
+    public TestService(IMapper mapper, ITestRepository testRepository, IQuestionRepository questionRepository, IValidator<Test> setValidator)
     {
         _mapper = mapper;
-        _setRepository = setRepository;
+        _testRepository = testRepository;
         _questionRepository = questionRepository;
         _setValidator = setValidator;
     }
 
     public async Task<List<UserTestDto>?> GetAllUserSets(int userId)
     {
-        var sets = await _setRepository.GetSetsByUserIdAsync(userId);
+        var sets = await _testRepository.GetSetsByUserIdAsync(userId);
 
         return _mapper.Map<List<UserTestDto>?>(sets);
     }
 
     public async Task<TestDto?> GetByIdAsync(int id)
     {
-        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id);
+        var set = await _testRepository.GetSetWithQuestionsByIdAsync(id);
         if (set is null) return null;
         set.Questions = set.Questions?.Where(q => !q.IsDeleted).ToList();
 
@@ -49,8 +50,8 @@ public class TestService : ITestService
         var validationResult = await _setValidator.ValidateAsync(newSet);
         if (!validationResult.IsValid) return new Result<int> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
-        await _setRepository.InsertSetAsync(newSet);
-        return await _setRepository.SaveAsync()
+        await _testRepository.InsertSetAsync(newSet);
+        return await _testRepository.SaveAsync()
             ? new Result<int> { Success = true, Value = newSet.Id }
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
@@ -65,22 +66,22 @@ public class TestService : ITestService
             return new Result<int>
             { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
-        var setEntity = await _setRepository.GetSetByIdAsync(id);
+        var setEntity = await _testRepository.GetSetByIdAsync(id);
         if (setEntity is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
         setEntity.Title = set.Title;
         setEntity.Description = set.Description;
 
-        _setRepository.UpdateSet(setEntity);
-        return await _setRepository.SaveAsync()
+        _testRepository.UpdateSet(setEntity);
+        return await _testRepository.SaveAsync()
             ? new Result<int> { Success = true, Value = setEntity.Id }
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
     public async Task<Result<TestDto>> ModifySet(int id, CreateTestDto dto)
     {
-        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
+        var set = await _testRepository.GetSetWithQuestionsByIdAsync(id, false);
         if (set is null)
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
@@ -92,13 +93,13 @@ public class TestService : ITestService
         set.Description = dto.Description;
         set.Questions = new List<Question>(_mapper.Map<IEnumerable<Question>>(dto.Questions));
 
-        var modified = await _setRepository.SaveAsync();
+        var modified = await _testRepository.SaveAsync();
         return modified ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = "Something went wrong" };
     }
 
     public async Task<Result<int>> DuplicateSetAsync(int setId, int userId)
     {
-        var set = await _setRepository.GetSetWithQuestionsByIdAsync(setId);
+        var set = await _testRepository.GetSetWithQuestionsByIdAsync(setId);
         if (set is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
@@ -110,47 +111,15 @@ public class TestService : ITestService
             UserId = userId
         };
 
-        await _setRepository.InsertSetAsync(newSet);
-        return await _setRepository.SaveAsync() ?
+        await _testRepository.InsertSetAsync(newSet);
+        return await _testRepository.SaveAsync() ?
                 new Result<int> { Success = true, Value = newSet.Id } :
                 new Result<int> { Success = false, ErrorMessage = "Something went wrong." };
     }
-
-    public async Task<Result<TestDto>> CreateTestSession(CreateTestSessionDto dto)
-    {
-        var test = await _setRepository.GetSetWithQuestionsByIdAsync(dto.TestId);
-        if (test is null)
-            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
-
-        if (test.Questions is not null)
-        {
-            if (dto.ShuffleQuestions)
-                ShuffleArray(test.Questions);
-
-            //if (dto.ShuffleAnswers)
-            foreach (var question in test.Questions)
-            {
-                if (question.Answers is not null)
-                {
-                    foreach (var answer in question.Answers)
-                        answer.Correct = false;
-
-                    if (dto.ShuffleAnswers)
-                        ShuffleArray(question.Answers);
-                }
-            }
-        }
-
-        return new Result<TestDto>
-        {
-            Success = true,
-            Value = _mapper.Map<TestDto>(test)
-        };
-    }
-
+    
     public async Task<bool> AddQuestionToSetAsync(int setId, int questionId)
     {
-        var set = await _setRepository.GetSetByIdAsync(setId, false);
+        var set = await _testRepository.GetSetByIdAsync(setId, false);
         var question = await _questionRepository.GetQuestionByIdAsync(questionId, false);
 
         if (set is null || question is null) return false;
@@ -160,7 +129,7 @@ public class TestService : ITestService
         {
             set.Questions ??= new List<Question>();
             set.Questions.Add(question);
-            return await _setRepository.SaveAsync();
+            return await _testRepository.SaveAsync();
         }
         catch (DbUpdateException)
         {
@@ -170,19 +139,19 @@ public class TestService : ITestService
 
     public async Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId)
     {
-        var set = await _setRepository.GetSetByIdAsync(setId);
+        var set = await _testRepository.GetSetByIdAsync(setId);
         if (set is null) return false;
 
         var question = set.Questions?.FirstOrDefault(x => x.Id == questionId);
         if (question is null) return false;
 
         set.Questions?.Remove(question);
-        return await _setRepository.SaveAsync();
+        return await _testRepository.SaveAsync();
     }
 
     public async Task<bool> DeleteByIdAsync(int id)
     {
-        var set = await _setRepository.GetSetWithQuestionsByIdAsync(id, false);
+        var set = await _testRepository.GetSetWithQuestionsByIdAsync(id, false);
         if (set is null) return false;
         set.IsDeleted = true;
 
@@ -190,8 +159,8 @@ public class TestService : ITestService
             foreach (var question in set.Questions)
                 question.IsDeleted = true;
 
-        _setRepository.UpdateSet(set);
-        return await _setRepository.SaveAsync();
+        _testRepository.UpdateSet(set);
+        return await _testRepository.SaveAsync();
     }
 
     public async Task<Result<TestDto>> CreateNewSetWithQuestionsAsync(CreateTestDto dto, int userId)
@@ -204,29 +173,9 @@ public class TestService : ITestService
         if (!validationResult.IsValid)
             return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
-        await _setRepository.InsertSetAsync(set);
-        var created = await _setRepository.SaveAsync();
+        await _testRepository.InsertSetAsync(set);
+        var created = await _testRepository.SaveAsync();
 
-        return created ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = "Something went wrong" };
-    }
-
-    private static void ShuffleArray<T>(ICollection<T>? coll)
-    {
-        if (coll is null)
-            return;
-
-        var rand = new Random();
-        var array = new T[coll.Count];
-        coll.CopyTo(array, 0);
-
-        for (int i = array.Length - 1; i > 0; --i)
-        {
-            var j = rand.Next(i + 1);
-            (array[i], array[j]) = (array[j], array[i]);
-        }
-
-        coll.Clear();
-        foreach (var elem in array)
-            coll.Add(elem);
+        return created ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(set) } : new Result<TestDto> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 }

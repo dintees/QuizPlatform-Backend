@@ -21,7 +21,7 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        modelBuilder.Entity<TestSession>().HasOne(e => e.User).WithOne().OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<TestSession>().HasOne(e => e.User).WithMany().OnDelete(DeleteBehavior.Restrict);
 
 
         //modelBuilder.Entity<Test>().HasMany(d => d.Questions).WithMany(s => s.Tests).UsingEntity<QuestionSet>();
