@@ -49,7 +49,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("SetId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.QuestionAnswer", b =>
@@ -73,7 +73,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("Answers");
+                    b.ToTable("Answers", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Role", b =>
@@ -89,7 +89,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new
@@ -134,7 +134,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tests");
+                    b.ToTable("Tests", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.TestSession", b =>
@@ -169,7 +169,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TestSessions");
+                    b.ToTable("TestSessions", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.User", b =>
@@ -211,7 +211,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserSession", b =>
@@ -238,7 +238,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions");
+                    b.ToTable("UserSessions", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserToken", b =>
@@ -262,7 +262,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTokens");
+                    b.ToTable("UserTokens", (string)null);
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Question", b =>

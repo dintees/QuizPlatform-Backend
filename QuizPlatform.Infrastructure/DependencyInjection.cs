@@ -1,5 +1,6 @@
 ﻿using EducationPlatform.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using QuizPlatform.Infrastructure.Builders;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Repositories;
 using QuizPlatform.Infrastructure.Services;
@@ -23,6 +24,8 @@ namespace QuizPlatform.Infrastructure
             services.AddScoped<ITestSessionService, TestSessionService>();
 
             services.AddScoped<IUserContextService, UserContextService>();
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<EmailBuilder>();
 
             // AutoMapper
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

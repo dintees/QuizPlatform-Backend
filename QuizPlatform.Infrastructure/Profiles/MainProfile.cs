@@ -24,6 +24,11 @@ public class MainProfile : Profile
         CreateMap<QuestionAnswer, CreateAnswerDto>()
             .ForMember(m => m.Answer, o => o.MapFrom(s => s.Content));
 
+        CreateMap<QuestionAnswer, AnswerDto>()
+            .ForMember(m => m.Answer, o => o.MapFrom(s => s.Content));
+        CreateMap<AnswerDto, QuestionAnswer>()
+            .ForMember(m => m.Content, o => o.MapFrom(s => s.Answer));
+
         CreateMap<Question, QuestionDto>()
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
         //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));

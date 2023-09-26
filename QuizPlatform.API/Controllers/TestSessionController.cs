@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
+using QuizPlatform.Infrastructure.Models.Question;
 using QuizPlatform.Infrastructure.Models.TestSession;
 
 namespace QuizPlatform.API.Controllers
@@ -11,11 +12,13 @@ namespace QuizPlatform.API.Controllers
     {
         private readonly ITestSessionService _testSessionService;
         private readonly IUserContextService _userContextService;
+        private readonly IEmailService _emailService;
 
-        public TestSessionController(ITestSessionService testSessionService, IUserContextService userContextService)
+        public TestSessionController(ITestSessionService testSessionService, IUserContextService userContextService, IEmailService emailService)
         {
             _testSessionService = testSessionService;
             _userContextService = userContextService;
+            _emailService = emailService;
         }
 
         [Authorize]
@@ -53,6 +56,14 @@ namespace QuizPlatform.API.Controllers
                 return Ok(result.Value);
 
             return BadRequest(result.ErrorMessage);
+        }
+
+        [Authorize]
+        [HttpPost("saveAnswers")]
+        public async Task<ActionResult> SaveAnswers(List<QuestionDto> dto)
+        {
+            // TODO
+            return NotFound("TODO");
         }
     }
 }

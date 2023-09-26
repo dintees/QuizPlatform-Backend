@@ -5,6 +5,7 @@ using AutoMapper;
 using FluentValidation;
 using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.Infrastructure.Authentication;
+using QuizPlatform.Infrastructure.Builders;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
@@ -20,16 +21,20 @@ public class UserService : IUserService
     private readonly ILoggingService _loggingService;
     private readonly IUserRepository _userRepository;
     private readonly IUserTokenRepository _userTokenRepository;
+    private readonly EmailBuilder _emailBuilder;
+    private readonly IEmailService _emailService;
     private readonly IValidator<UserRegisterDto> _userRegisterValidator;
     private readonly IValidator<ChangeUserPasswordDto> _changeUserPasswordValidator;
 
-    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository, IUserTokenRepository userTokenRepository, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
+    public UserService(AuthenticationSettings authenticationSettings, IMapper mapper, ILoggingService loggingService, IUserRepository userRepository, IUserTokenRepository userTokenRepository, EmailBuilder emailBuilder, IEmailService emailService, IValidator<UserRegisterDto> userRegisterValidator, IValidator<ChangeUserPasswordDto> changeUserPasswordValidator)
     {
         _mapper = mapper;
         _authenticationSettings = authenticationSettings;
         _loggingService = loggingService;
         _userRepository = userRepository;
         _userTokenRepository = userTokenRepository;
+        _emailBuilder = emailBuilder;
+        _emailService = emailService;
         _userRegisterValidator = userRegisterValidator;
         _changeUserPasswordValidator = changeUserPasswordValidator;
     }
@@ -86,6 +91,10 @@ public class UserService : IUserService
 
         var userToken = new UserToken { Token = GenerateToken(8), UserId = user.Id, ExpirationTime = DateTime.Now.AddMinutes(30) };
         await _userTokenRepository.AddAsync(userToken);
+
+        // send email
+        await SendEmailWithRegistrationTokenAsync(user.Email!, userToken.Token);
+
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
@@ -146,5 +155,20 @@ public class UserService : IUserService
         for (int i = 0; i < size; ++i)
             tokenBuilder.Append(rand.Next(10));
         return tokenBuilder.ToString();
+    }
+
+    private async Task SendEmailWithRegistrationTokenAsync(string email, string token)
+    {
+        var subject = "Fiszlet - confirm your account";
+        var content = $@"
+Hello,
+nice to start the adventure with you!
+Your activation code is: {token}
+
+Regards,
+Fiszlet";
+
+        var message = _emailBuilder.WithSubject(subject).To(email).WithMessage(content);
+        await _emailService.SendAsync(message.Build());
     }
 }
