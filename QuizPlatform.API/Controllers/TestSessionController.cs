@@ -12,13 +12,11 @@ namespace QuizPlatform.API.Controllers
     {
         private readonly ITestSessionService _testSessionService;
         private readonly IUserContextService _userContextService;
-        private readonly IEmailService _emailService;
 
-        public TestSessionController(ITestSessionService testSessionService, IUserContextService userContextService, IEmailService emailService)
+        public TestSessionController(ITestSessionService testSessionService, IUserContextService userContextService)
         {
             _testSessionService = testSessionService;
             _userContextService = userContextService;
-            _emailService = emailService;
         }
 
         [Authorize]
@@ -39,7 +37,7 @@ namespace QuizPlatform.API.Controllers
         {
             var result = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId);
             
-            return result.Success ? Ok(result.Value) : BadRequest(result.ErrorMessage);
+            return result.Success ? Ok(result.Value) : NotFound(result.ErrorMessage);
         }
 
         [Authorize]
@@ -59,11 +57,16 @@ namespace QuizPlatform.API.Controllers
         }
 
         [Authorize]
-        [HttpPost("saveAnswers")]
-        public async Task<ActionResult> SaveAnswers(List<QuestionDto> dto)
+        [HttpPost("saveAnswers/{testSessionId:int}")]
+        public async Task<ActionResult> SaveAnswers(List<UserAnswersDto> dto, [FromRoute] int testSessionId)
         {
-            // TODO
-            return NotFound("TODO");
+            var userId = _userContextService.UserId;
+            if (userId is null)
+                return Unauthorized();
+
+            bool result = await _testSessionService.SaveUserAnswersAsync(dto, testSessionId, userId.Value);
+
+            return result ? Ok() : BadRequest();
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QuizPlatform.Infrastructure.Entities;
 
@@ -11,9 +12,11 @@ using QuizPlatform.Infrastructure.Entities;
 namespace QuizPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230929130653_Change concept of UserAnswers entity")]
+    partial class ChangeconceptofUserAnswersentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -222,7 +225,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("QuestionAnswerId")
+                    b.Property<int>("QuestionAnswerId")
                         .HasColumnType("int");
 
                     b.Property<int>("QuestionId")
@@ -359,7 +362,9 @@ namespace QuizPlatform.Infrastructure.Migrations
                 {
                     b.HasOne("QuizPlatform.Infrastructure.Entities.QuestionAnswer", "QuestionAnswer")
                         .WithMany()
-                        .HasForeignKey("QuestionAnswerId");
+                        .HasForeignKey("QuestionAnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("QuizPlatform.Infrastructure.Entities.Question", "Question")
                         .WithMany()

@@ -13,8 +13,10 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<TestSession?> GetBySessionIdAsync(int testSessionId)
+        public async Task<TestSession?> GetBySessionIdAsync(int testSessionId, bool includeTest = false)
         {
+            if (includeTest)
+                return await _context.TestSessions.Include(e => e.Test).ThenInclude(t => t.Questions).ThenInclude(q => q.Answers).FirstOrDefaultAsync(e => e.Id == testSessionId);
             return await _context.TestSessions.FirstOrDefaultAsync(e => e.Id == testSessionId);
         }
 

@@ -76,7 +76,7 @@ namespace QuizPlatform.Tests
                 Description = "Description"
             };
 
-            var result = await _service.CreateNewSetAsync(set, 1);
+            var result = await _service.CreateNewTestAsync(set, 1);
 
             Assert.False(result.Success);
             Assert.Equal(TestErrorMessages.EmptySetTitle, result.ErrorMessage);
@@ -93,7 +93,7 @@ namespace QuizPlatform.Tests
                 Description = "Description"
             };
 
-            var result = await _service.CreateNewSetAsync(set, 1);
+            var result = await _service.CreateNewTestAsync(set, 1);
             var foundSet = await _service.GetByIdAsync(3);
 
             Assert.True(result.Success);
@@ -105,7 +105,7 @@ namespace QuizPlatform.Tests
         {
             var setOptions = new TestDto { Description = "New description" };
 
-            var result = await _service.ModifySetPropertiesAsync(2, setOptions);
+            var result = await _service.ModifyTestPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
 
             Assert.False(result.Success);
@@ -118,7 +118,7 @@ namespace QuizPlatform.Tests
         {
             var setOptions = new TestDto { Title = "New title", Description = "New description" };
 
-            var result = await _service.ModifySetPropertiesAsync(2, setOptions);
+            var result = await _service.ModifyTestPropertiesAsync(2, setOptions);
             var foundSet = await _service.GetByIdAsync(2);
 
             Assert.True(result.Success);
@@ -134,7 +134,7 @@ namespace QuizPlatform.Tests
             const int userId = 5;
 
             // Act
-            var result = await _service.GetAllUserSets(userId);
+            var result = await _service.GetAllUserTests(userId);
 
             // Assert
             Assert.Equal(2, result?.Count);
@@ -146,7 +146,7 @@ namespace QuizPlatform.Tests
         [InlineData(10, 10)]
         public async Task AddQuestionToSetAsync_ForInvalidQuestionAndSetId_ReturnsFalse(int setId, int questionId)
         {
-            var result = await _service.AddQuestionToSetAsync(setId, questionId);
+            var result = await _service.AddQuestionToTestAsync(setId, questionId);
 
             Assert.False(result);
         }
@@ -154,7 +154,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task AddQuestionToSetAsync_ForValidIds_ReturnsTrueAndAddQuestionToSet()
         {
-            var result = await _service.AddQuestionToSetAsync(2, 2);
+            var result = await _service.AddQuestionToTestAsync(2, 2);
 
             var questionCount = await _service.GetByIdAsync(2);
 
@@ -168,7 +168,7 @@ namespace QuizPlatform.Tests
         [InlineData(10, 10)]
         public async Task RemoveQuestionFromSetAsync_ForInvalidIds_ReturnsFalse(int setId, int questionId)
         {
-            var result = await _service.RemoveQuestionFromSetAsync(setId, questionId);
+            var result = await _service.RemoveQuestionFromTestAsync(setId, questionId);
 
             Assert.False(result);
         }
@@ -176,7 +176,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task RemoveQuestionFromSetAsync_ForValidIds_ReturnsTrueAndAddRemoveQuestionFromSet()
         {
-            var result = await _service.RemoveQuestionFromSetAsync(1, 3);
+            var result = await _service.RemoveQuestionFromTestAsync(1, 3);
 
             var questionCount = await _service.GetByIdAsync(1);
 
@@ -203,17 +203,17 @@ namespace QuizPlatform.Tests
         private Mock<ITestRepository> GetSetRepositoryMock(List<Test> sets)
         {
             var mock = new Mock<ITestRepository>();
-            mock.Setup(x => x.GetSetWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
+            mock.Setup(x => x.GetTestWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
                 .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
-            mock.Setup(x => x.GetSetByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
+            mock.Setup(x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<bool>()))
                 .ReturnsAsync((int id, bool _) => sets.FirstOrDefault(e => e.Id == id));
-            mock.Setup(x => x.InsertSetAsync(It.IsAny<Test>()))
+            mock.Setup(x => x.AddAsync(It.IsAny<Test>()))
                 .Callback((Test set) =>
                 {
                     set.Id = 3;
                     sets.Add(set);
                 });
-            mock.Setup(x => x.GetSetsByUserIdAsync(It.IsAny<int>())).ReturnsAsync((int userId) =>
+            mock.Setup(x => x.GetTestsByUserIdAsync(It.IsAny<int>())).ReturnsAsync((int userId) =>
             {
                 return sets.Where(e => e.UserId == userId).ToList();
             });

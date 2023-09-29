@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QuizPlatform.Infrastructure.Entities;
 
@@ -11,9 +12,11 @@ using QuizPlatform.Infrastructure.Entities;
 namespace QuizPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230927162724_Add TestSession column to UserAnswers entity")]
+    partial class AddTestSessioncolumntoUserAnswersentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,9 +72,14 @@ namespace QuizPlatform.Infrastructure.Migrations
                     b.Property<int?>("QuestionId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("UserAnswersId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserAnswersId");
 
                     b.ToTable("Answers");
                 });
@@ -222,9 +230,6 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("QuestionAnswerId")
-                        .HasColumnType("int");
-
                     b.Property<int>("QuestionId")
                         .HasColumnType("int");
 
@@ -235,8 +240,6 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("QuestionAnswerId");
 
                     b.HasIndex("QuestionId");
 
@@ -312,6 +315,10 @@ namespace QuizPlatform.Infrastructure.Migrations
                     b.HasOne("QuizPlatform.Infrastructure.Entities.Question", null)
                         .WithMany("Answers")
                         .HasForeignKey("QuestionId");
+
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.UserAnswers", null)
+                        .WithMany("QuestionAnswers")
+                        .HasForeignKey("UserAnswersId");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Test", b =>
@@ -357,10 +364,6 @@ namespace QuizPlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserAnswers", b =>
                 {
-                    b.HasOne("QuizPlatform.Infrastructure.Entities.QuestionAnswer", "QuestionAnswer")
-                        .WithMany()
-                        .HasForeignKey("QuestionAnswerId");
-
                     b.HasOne("QuizPlatform.Infrastructure.Entities.Question", "Question")
                         .WithMany()
                         .HasForeignKey("QuestionId")
@@ -374,8 +377,6 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
-
-                    b.Navigation("QuestionAnswer");
 
                     b.Navigation("TestSession");
                 });
@@ -410,6 +411,11 @@ namespace QuizPlatform.Infrastructure.Migrations
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Test", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserAnswers", b =>
+                {
+                    b.Navigation("QuestionAnswers");
                 });
 #pragma warning restore 612, 618
         }

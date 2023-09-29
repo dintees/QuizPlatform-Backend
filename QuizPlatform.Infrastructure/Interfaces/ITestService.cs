@@ -6,13 +6,13 @@ namespace QuizPlatform.Infrastructure.Interfaces;
 public interface ITestService
 {
     Task<TestDto?> GetByIdAsync(int id);
-    Task<List<UserTestDto>?> GetAllUserSets(int userId);
-    Task<Result<int>> CreateNewSetAsync(CreateTestDto dto, int userId);
-    Task<Result<int>> ModifySetPropertiesAsync(int id,TestDto testDto);
-    Task<bool> AddQuestionToSetAsync(int setId, int questionId);
-    Task<bool> RemoveQuestionFromSetAsync(int setId, int questionId);
+    Task<List<UserTestDto>?> GetAllUserTests(int userId);
+    Task<Result<int>> CreateNewTestAsync(CreateTestDto dto, int userId);
+    Task<Result<int>> ModifyTestPropertiesAsync(int id,TestDto testDto);
+    Task<bool> AddQuestionToTestAsync(int setId, int questionId);
+    Task<bool> RemoveQuestionFromTestAsync(int setId, int questionId);
     Task<bool> DeleteByIdAsync(int id);
-    Task<Result<TestDto>> CreateNewSetWithQuestionsAsync(CreateTestDto dto, int userId);
-    Task<Result<TestDto>> ModifySet(int id, CreateTestDto dto);
-    Task<Result<int>> DuplicateSetAsync(int setId, int userId);
+    Task<Result<TestDto>> CreateNewTestWithQuestionsAsync(CreateTestDto dto, int userId);
+    Task<Result<TestDto>> ModifyTestAsync(int id, CreateTestDto dto);
+    Task<Result<int>> DuplicateTestAsync(int setId, int userId);
 }

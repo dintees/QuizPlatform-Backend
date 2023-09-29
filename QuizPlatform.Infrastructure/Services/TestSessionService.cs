@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using QuizPlatform.Infrastructure.Entities;
+using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.Test;
@@ -12,12 +13,14 @@ namespace QuizPlatform.Infrastructure.Services
     {
         private readonly ITestRepository _testRepository;
         private readonly ITestSessionRepository _testSessionRepository;
+        private readonly IUserAnswersRepository _userAnswersRepository;
         private readonly IMapper _mapper;
 
-        public TestSessionService(ITestRepository testRepository, ITestSessionRepository testSessionRepository, IMapper mapper)
+        public TestSessionService(ITestRepository testRepository, ITestSessionRepository testSessionRepository, IUserAnswersRepository userAnswersRepository, IMapper mapper)
         {
             _testRepository = testRepository;
             _testSessionRepository = testSessionRepository;
+            _userAnswersRepository = userAnswersRepository;
             _mapper = mapper;
         }
 
@@ -27,7 +30,6 @@ namespace QuizPlatform.Infrastructure.Services
             testSession.UserId = userId;
 
             await _testSessionRepository.AddAsync(testSession);
-
             return await _testSessionRepository.SaveAsync() ? new Result<int> { Success = true, Value = testSession.Id } : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
         }
 
@@ -37,35 +39,77 @@ namespace QuizPlatform.Infrastructure.Services
             return _mapper.Map<List<UserTestSessionDto>>(testSession);
         }
 
+        public async Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, int userId)
+        {
+            var currentlySavedEntities = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
+
+            foreach (var userAnswer in dto)
+            {
+                if (userAnswer.ShortAnswerValue is null)
+                {
+                    foreach (var userSingleAnswer in userAnswer.AnswerIds!)
+                    {
+                        var foundEntities = currentlySavedEntities?.Find(e => e.QuestionAnswerId == userSingleAnswer);
+                        if (foundEntities is null)
+                            await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = userAnswer.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+                        else
+                            currentlySavedEntities.Remove(foundEntities);
+                    }
+                }
+                else
+                {
+                    var foundEntities = currentlySavedEntities?.Find(e => e.QuestionId == userAnswer.QuestionId);
+                    if (foundEntities is null)
+                        await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = userAnswer.QuestionId, ShortAnswerValue = userAnswer.ShortAnswerValue, TestSessionId = testSessionId });
+                    else
+                        foundEntities.ShortAnswerValue = userAnswer.ShortAnswerValue;
+                }
+            }
+
+            foreach (var entity in currentlySavedEntities)
+                if (entity.ShortAnswerValue is null)
+                    _userAnswersRepository.Delete(entity);
+
+            return await _userAnswersRepository.SaveAsync();
+        }
+
         public async Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId)
         {
-            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
+            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
             if (testSession is null)
                 return new Result<TestDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
 
-            var test = await _testRepository.GetSetWithQuestionsByIdAsync(testSession.TestId);
-            if (test is null)
-                return new Result<TestDto?> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
+            var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
-            if (test.Questions is not null)
+            // Shuffle questions and answers
+            if (testSession?.Test?.Questions is not null)
             {
                 if (testSession.ShuffleQuestions)
-                    ShuffleArray(test.Questions);
+                    ShuffleArray(testSession.Test.Questions);
 
-                foreach (var question in test.Questions)
+                foreach (var question in testSession.Test.Questions)
                 {
                     if (question.Answers is not null)
                     {
                         foreach (var answer in question.Answers)
-                            answer.Correct = false;
+                        {
+                            if (question.QuestionType == QuestionType.ShortAnswer)
+                            {
+                                question.Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = userAnswers?.Find(e => e.QuestionId == question.Id)?.ShortAnswerValue ?? string.Empty, Correct = false } };
+                                continue;
+                            }
+
+                            answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
+                        }
 
                         if (testSession.ShuffleAnswers)
                             ShuffleArray(question.Answers);
                     }
                 }
             }
+            var testDto = _mapper.Map<TestDto>(testSession?.Test);
 
-            return new Result<TestDto?> { Success = true, Value = _mapper.Map<TestDto>(test) };
+            return new Result<TestDto?> { Success = true, Value = testDto };
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)

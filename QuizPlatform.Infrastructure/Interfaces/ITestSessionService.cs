@@ -9,4 +9,5 @@ public interface ITestSessionService
     Task<Result<int>> CreateTestSession(CreateTestSessionDto dto, int userId);
     Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId);
     Task<List<UserTestSessionDto>> GetActiveUserTestSessionsAsync(int userId);
+    Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, int userId);
 }

@@ -13,7 +13,7 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Test?> GetSetWithQuestionsByIdAsync(int id, bool readOnly = true)
+        public async Task<Test?> GetTestWithQuestionsByIdAsync(int id, bool readOnly = true)
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
@@ -24,23 +24,23 @@ namespace QuizPlatform.Infrastructure.Repositories
             return set;
         }
 
-        public async Task<Test?> GetSetByIdAsync(int id, bool readOnly = true)
+        public async Task<Test?> GetByIdAsync(int id, bool readOnly = true)
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             return await _context.Tests.FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public async Task<List<Test>?> GetSetsByUserIdAsync(int userId)
+        public async Task<List<Test>?> GetTestsByUserIdAsync(int userId)
         {
             return await _context.Tests.Include(e => e.User).Where(e => e.UserId == userId && !e.IsDeleted).ToListAsync();
         }
 
-        public async Task InsertSetAsync(Test test)
+        public async Task AddAsync(Test test)
         {
             await _context.Tests.AddAsync(test);
         }
 
-        public void UpdateSet(Test test)
+        public void Update(Test test)
         {
             _context.Entry(test).State = EntityState.Modified;
         }

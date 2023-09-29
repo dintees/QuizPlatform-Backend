@@ -25,7 +25,7 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
 
         if (userId is null) return BadRequest();
-        var userSets = await _testService.GetAllUserSets(userId.Value);
+        var userSets = await _testService.GetAllUserTests(userId.Value);
 
         return Ok(userSets);
     }
@@ -45,7 +45,7 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var createdSetResult = await _testService.CreateNewSetAsync(testDto, userId.Value);
+        var createdSetResult = await _testService.CreateNewTestAsync(testDto, userId.Value);
         if (createdSetResult.Success) return Ok(createdSetResult);
         return BadRequest(createdSetResult.ErrorMessage);
     }
@@ -57,7 +57,7 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await _testService.CreateNewSetWithQuestionsAsync(testDto, userId.Value);
+        var result = await _testService.CreateNewTestWithQuestionsAsync(testDto, userId.Value);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }
@@ -65,7 +65,7 @@ public class TestController : ControllerBase
     [HttpPost("addQuestion/{setId:int}")]
     public async Task<ActionResult> AddQuestionToSet(int setId, [FromBody] int questionId)
     {
-        bool edited = await _testService.AddQuestionToSetAsync(setId, questionId);
+        bool edited = await _testService.AddQuestionToTestAsync(setId, questionId);
 
         if (edited) return Ok();
         return BadRequest();
@@ -75,7 +75,7 @@ public class TestController : ControllerBase
     [HttpPut("edit/{id:int}")]
     public async Task<ActionResult> EditSetProperties(int id, CreateTestDto testDto)
     {
-        var result = await _testService.ModifySet(id, testDto);
+        var result = await _testService.ModifyTestAsync(id, testDto);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }
@@ -87,7 +87,7 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await _testService.DuplicateSetAsync(setId, userId.Value);
+        var result = await _testService.DuplicateTestAsync(setId, userId.Value);
         if (result.Success) return Ok(result);
         return BadRequest(result.ErrorMessage);
     }
@@ -95,7 +95,7 @@ public class TestController : ControllerBase
     [HttpDelete("removeQuestion/{setId:int}")]
     public async Task<ActionResult> RemoveQuestionFromSet(int setId, [FromBody] int questionId)
     {
-        bool isRemoved = await _testService.RemoveQuestionFromSetAsync(setId, questionId);
+        bool isRemoved = await _testService.RemoveQuestionFromTestAsync(setId, questionId);
         return isRemoved ? Ok() : BadRequest();
     }
 

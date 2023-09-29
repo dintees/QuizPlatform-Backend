@@ -1,6 +1,6 @@
 ﻿namespace QuizPlatform.Infrastructure.Models.TestSession
 {
-    public  class UserSavedAnswersDto
+    public  class UserAnswersDto
     {
         public int QuestionId { get; set; }
         public List<int>? AnswerIds { get; set; }
