@@ -1,7 +1,7 @@
 ﻿using QuizPlatform.Infrastructure.Models.Question;
-namespace QuizPlatform.Infrastructure.Models.Set;
+namespace QuizPlatform.Infrastructure.Models.Test;
 
-public class SetDto
+public class TestDto
 {
     public int Id { get; set; }
     public string? Title { get; set; }

@@ -8,10 +8,11 @@ public class Question
     public string? Content { get; set; }
     public QuestionType QuestionType { get; set; }
     public bool IsDeleted { get; set; }
-    public Set? Set { get; set; }
-    public int SetId { get; set; }
+    public bool MathMode { get; set; }
+    public Test? Test { get; set; }
+    public int TestId { get; set; }
     public ICollection<QuestionAnswer>? Answers { get; set; }
 
-    //public ICollection<Set>? Sets { get; set; }
-    //public ICollection<QuestionSet>? Sets { get; set; }
+    //public ICollection<Test>? Tests { get; set; }
+    //public ICollection<QuestionSet>? Tests { get; set; }
 }

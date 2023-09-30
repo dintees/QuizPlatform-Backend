@@ -42,5 +42,10 @@ namespace QuizPlatform.Infrastructure.Repositories
         {
             _context.Answers.RemoveRange(answers);
         }
+
+        public void DeleteAnswer(QuestionAnswer answer)
+        {
+            _context.Answers.Remove(answer);
+        }
     }
 }

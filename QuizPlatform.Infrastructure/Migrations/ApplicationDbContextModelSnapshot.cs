@@ -36,17 +36,20 @@ namespace QuizPlatform.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("MathMode")
+                        .HasColumnType("bit");
+
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
 
-                    b.Property<int>("SetId")
+                    b.Property<int>("TestId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SetId");
+                    b.HasIndex("TestId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.QuestionAnswer", b =>
@@ -70,7 +73,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("Answers", (string)null);
+                    b.ToTable("Answers");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Role", b =>
@@ -86,7 +89,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -101,7 +104,7 @@ namespace QuizPlatform.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Set", b =>
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Test", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -113,6 +116,9 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPublic")
                         .HasColumnType("bit");
 
                     b.Property<string>("Title")
@@ -131,7 +137,48 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Sets", (string)null);
+                    b.ToTable("Tests");
+                });
+
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.TestSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsFinished")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OneQuestionMode")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShuffleAnswers")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShuffleQuestions")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TsInsert")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TsUpdate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TestSessions");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.User", b =>
@@ -173,7 +220,38 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserAnswers", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("QuestionAnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ShortAnswerValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TestSessionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionAnswerId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("TestSessionId");
+
+                    b.ToTable("UserAnswers");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserSession", b =>
@@ -200,7 +278,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions", (string)null);
+                    b.ToTable("UserSessions");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserToken", b =>
@@ -211,7 +289,7 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ExpirationTIme")
+                    b.Property<DateTime>("ExpirationTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Token")
@@ -224,18 +302,18 @@ namespace QuizPlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTokens", (string)null);
+                    b.ToTable("UserTokens");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Question", b =>
                 {
-                    b.HasOne("QuizPlatform.Infrastructure.Entities.Set", "Set")
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.Test", "Test")
                         .WithMany("Questions")
-                        .HasForeignKey("SetId")
+                        .HasForeignKey("TestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Set");
+                    b.Navigation("Test");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.QuestionAnswer", b =>
@@ -245,13 +323,32 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .HasForeignKey("QuestionId");
                 });
 
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Set", b =>
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Test", b =>
                 {
                     b.HasOne("QuizPlatform.Infrastructure.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.TestSession", b =>
+                {
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.Test", "Test")
+                        .WithMany()
+                        .HasForeignKey("TestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Test");
 
                     b.Navigation("User");
                 });
@@ -265,6 +362,31 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserAnswers", b =>
+                {
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.QuestionAnswer", "QuestionAnswer")
+                        .WithMany()
+                        .HasForeignKey("QuestionAnswerId");
+
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuizPlatform.Infrastructure.Entities.TestSession", "TestSession")
+                        .WithMany()
+                        .HasForeignKey("TestSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("QuestionAnswer");
+
+                    b.Navigation("TestSession");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.UserSession", b =>
@@ -294,7 +416,7 @@ namespace QuizPlatform.Infrastructure.Migrations
                     b.Navigation("Answers");
                 });
 
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Set", b =>
+            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Test", b =>
                 {
                     b.Navigation("Questions");
                 });

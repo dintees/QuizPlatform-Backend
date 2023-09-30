@@ -8,7 +8,7 @@ using QuizPlatform.Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// AddAsync services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -28,6 +28,11 @@ builder.Services.AddScoped<ErrorHandlingMiddleware>();
 var authenticationSettings = new AuthenticationSettings();
 builder.Configuration.GetSection("JWT").Bind(authenticationSettings);
 builder.Services.AddSingleton(authenticationSettings);
+
+// Email configuration
+var emailConfiguration = new EmailConfiguration();
+builder.Configuration.GetSection("EmailConfiguration").Bind(emailConfiguration);
+builder.Services.AddSingleton(emailConfiguration);
 
 builder.Services.AddAuthentication(option =>
 {

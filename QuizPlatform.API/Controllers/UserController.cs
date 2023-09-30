@@ -13,10 +13,12 @@ namespace QuizPlatform.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IUserContextService _userContextService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IUserContextService userContextService)
     {
         _userService = userService;
+        _userContextService = userContextService;
     }
 
     [HttpPost("login")]
@@ -45,11 +47,23 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("edit")]
+    public async Task<ActionResult> ChangeUserProperties(ChangeUserPropertiesDto dto)
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null)
+            return BadRequest();
+
+        var result= await _userService.ChangeUserPropertiesAsync(userId.Value, dto);
+        if (result is null) return Ok();
+        return BadRequest(result);
+    }
+
+    [Authorize]
     [HttpPost("changePassword")]
     public async Task<ActionResult> ChangePassword(ChangeUserPasswordDto dto)
     {
-        var identity = HttpContext.User.Identity as ClaimsIdentity;
-        if (identity == null) return BadRequest(UserErrorMessages.PersonWithThisIdDoesNotExist);
+        if (HttpContext.User.Identity is not ClaimsIdentity identity) return BadRequest(UserErrorMessages.PersonWithThisIdDoesNotExist);
 
         var claims = identity.Claims;
 

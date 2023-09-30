@@ -1,6 +1,6 @@
-﻿namespace QuizPlatform.Infrastructure.Models.Set
+﻿namespace QuizPlatform.Infrastructure.Models.Test
 {
-    public class UserSetDto
+    public class UserTestDto
     {
         public int Id { get; set; }
         public string? Title { get; set; }
