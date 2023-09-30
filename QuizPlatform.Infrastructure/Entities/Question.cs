@@ -9,8 +9,8 @@ public class Question
     public QuestionType QuestionType { get; set; }
     public bool IsDeleted { get; set; }
     public bool MathMode { get; set; }
-    public Test? Set { get; set; }
-    public int SetId { get; set; }
+    public Test? Test { get; set; }
+    public int TestId { get; set; }
     public ICollection<QuestionAnswer>? Answers { get; set; }
 
     //public ICollection<Test>? Tests { get; set; }

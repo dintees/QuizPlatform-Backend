@@ -93,7 +93,7 @@ public class UserService : IUserService
         await _userTokenRepository.AddAsync(userToken);
 
         // send email
-        await SendEmailWithRegistrationTokenAsync(user.Email!, userToken.Token);
+        await SendEmailWithRegistrationTokenAsync(user.Email!, string.Concat(dto.FirstName, " ", dto.LastName), userToken.Token);
 
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
@@ -148,22 +148,24 @@ public class UserService : IUserService
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
-    private string GenerateToken(int size)
+    private static string GenerateToken(int size)
     {
-        Random rand = new Random();
-        StringBuilder tokenBuilder = new StringBuilder();
+        var rand = new Random();
+        var tokenBuilder = new StringBuilder();
         for (int i = 0; i < size; ++i)
             tokenBuilder.Append(rand.Next(10));
         return tokenBuilder.ToString();
     }
 
-    private async Task SendEmailWithRegistrationTokenAsync(string email, string token)
+    private async Task SendEmailWithRegistrationTokenAsync(string email, string name, string token)
     {
         var subject = "Fiszlet - confirm your account";
         var content = $@"
-Hello,
+Hi {name}!,
 nice to start the adventure with you!
-Your activation code is: {token}
+To activate your account, copy the code and paste it into the indicated place on the website.
+
+Your activation code: {token}
 
 Regards,
 Fiszlet";

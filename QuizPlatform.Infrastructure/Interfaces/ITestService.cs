@@ -13,6 +13,6 @@ public interface ITestService
     Task<bool> RemoveQuestionFromTestAsync(int setId, int questionId);
     Task<bool> DeleteByIdAsync(int id);
     Task<Result<TestDto>> CreateNewTestWithQuestionsAsync(CreateTestDto dto, int userId);
-    Task<Result<TestDto>> ModifyTestAsync(int id, CreateTestDto dto);
+    Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto);
     Task<Result<int>> DuplicateTestAsync(int setId, int userId);
 }

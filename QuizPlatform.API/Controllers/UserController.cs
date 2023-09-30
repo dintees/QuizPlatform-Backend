@@ -63,8 +63,7 @@ public class UserController : ControllerBase
     [HttpPost("changePassword")]
     public async Task<ActionResult> ChangePassword(ChangeUserPasswordDto dto)
     {
-        var identity = HttpContext.User.Identity as ClaimsIdentity;
-        if (identity == null) return BadRequest(UserErrorMessages.PersonWithThisIdDoesNotExist);
+        if (HttpContext.User.Identity is not ClaimsIdentity identity) return BadRequest(UserErrorMessages.PersonWithThisIdDoesNotExist);
 
         var claims = identity.Claims;
 

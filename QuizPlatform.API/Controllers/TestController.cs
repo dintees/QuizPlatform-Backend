@@ -73,7 +73,7 @@ public class TestController : ControllerBase
 
     [Authorize]
     [HttpPut("edit/{id:int}")]
-    public async Task<ActionResult> EditSetProperties(int id, CreateTestDto testDto)
+    public async Task<ActionResult> EditSetProperties(int id, TestDto testDto)
     {
         var result = await _testService.ModifyTestAsync(id, testDto);
         if (result.Success) return Ok(result);

@@ -33,6 +33,10 @@ public class MainProfile : Profile
             .ForMember(m => m.Question, o => o.MapFrom(s => s.Content));
         //.ForMember(m => m.Answers, o => o.MapFrom(s => s.Answers!.Select(e => e.Content)));
 
+        CreateMap<QuestionDto, Question>()
+            .ForMember(m => m.Content, o => o.MapFrom(s => s.Question));
+
+
         // Test
         CreateMap<Test, TestDto>();
         CreateMap<TestDto, Test>();
@@ -51,13 +55,5 @@ public class MainProfile : Profile
         CreateMap<CreateTestSessionDto, TestSession>();
         CreateMap<TestSession, UserTestSessionDto>()
             .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title));
-
-        // UserAnswers
-        //CreateMap<UserAnswersDto, UserAnswers>()
-        //    .ForMember(m => m.QuestionAnswers,
-        //        o => o.MapFrom(s => s.AnswerIds!.Select(e => new QuestionAnswer { Id = e })));
-
-        //CreateMap<UserAnswers, UserAnswersDto>()
-        //    .ForMember(m => m.AnswerIds, o => o.MapFrom(s => s.QuestionAnswers!.Select(e => e.Id)));
     }
 }

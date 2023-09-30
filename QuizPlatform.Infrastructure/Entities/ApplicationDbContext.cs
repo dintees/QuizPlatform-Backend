@@ -15,7 +15,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<TestSession> TestSessions { get; set; }
     public DbSet<UserToken> UserTokens { get; set; }
     public DbSet<UserAnswers> UserAnswers { get; set; }
-    //public DbSet<QuestionSet> QuestionSets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +25,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<UserAnswers>().HasOne(e => e.TestSession).WithMany().OnDelete(DeleteBehavior.Restrict);
 
         //modelBuilder.Entity<Test>().HasMany(d => d.Questions).WithMany(s => s.Tests).UsingEntity<QuestionSet>();
-        //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.SetId }); // to delete
+        //modelBuilder.Entity<QuestionSet>().HasKey(i => new { i.QuestionId, i.TestId }); // to delete
     }
 }

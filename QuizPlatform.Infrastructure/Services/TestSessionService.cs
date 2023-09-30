@@ -11,14 +11,12 @@ namespace QuizPlatform.Infrastructure.Services
 {
     public class TestSessionService : ITestSessionService
     {
-        private readonly ITestRepository _testRepository;
         private readonly ITestSessionRepository _testSessionRepository;
         private readonly IUserAnswersRepository _userAnswersRepository;
         private readonly IMapper _mapper;
 
-        public TestSessionService(ITestRepository testRepository, ITestSessionRepository testSessionRepository, IUserAnswersRepository userAnswersRepository, IMapper mapper)
+        public TestSessionService(ITestSessionRepository testSessionRepository, IUserAnswersRepository userAnswersRepository, IMapper mapper)
         {
-            _testRepository = testRepository;
             _testSessionRepository = testSessionRepository;
             _userAnswersRepository = userAnswersRepository;
             _mapper = mapper;
@@ -35,11 +33,11 @@ namespace QuizPlatform.Infrastructure.Services
 
         public async Task<List<UserTestSessionDto>> GetActiveUserTestSessionsAsync(int userId)
         {
-            var testSession = await _testSessionRepository.GetByUserIdWithTestAsync(userId);
+            var testSession = await _testSessionRepository.GetByUserIdWithTestAsync(userId, true);
             return _mapper.Map<List<UserTestSessionDto>>(testSession);
         }
 
-        public async Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, int userId)
+        public async Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, bool finish, int userId)
         {
             var currentlySavedEntities = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
@@ -53,7 +51,7 @@ namespace QuizPlatform.Infrastructure.Services
                         if (foundEntities is null)
                             await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = userAnswer.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
                         else
-                            currentlySavedEntities.Remove(foundEntities);
+                            currentlySavedEntities?.Remove(foundEntities);
                     }
                 }
                 else
@@ -66,11 +64,17 @@ namespace QuizPlatform.Infrastructure.Services
                 }
             }
 
-            foreach (var entity in currentlySavedEntities)
-                if (entity.ShortAnswerValue is null)
-                    _userAnswersRepository.Delete(entity);
+            foreach (var entity in currentlySavedEntities!.Where(entity => entity.ShortAnswerValue is null))
+                _userAnswersRepository.Delete(entity);
 
-            return await _userAnswersRepository.SaveAsync();
+            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
+            if (testSession is not null)
+            {
+                testSession.TsUpdate = DateTime.Now;
+                if (finish) testSession.IsFinished = true;
+            }
+
+            return await _testSessionRepository.SaveAsync();
         }
 
         public async Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId)
@@ -84,7 +88,7 @@ namespace QuizPlatform.Infrastructure.Services
             // Shuffle questions and answers
             if (testSession?.Test?.Questions is not null)
             {
-                if (testSession.ShuffleQuestions)
+                if (testSession.IsFinished == false && testSession.ShuffleQuestions)
                     ShuffleArray(testSession.Test.Questions);
 
                 foreach (var question in testSession.Test.Questions)
@@ -102,7 +106,7 @@ namespace QuizPlatform.Infrastructure.Services
                             answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
                         }
 
-                        if (testSession.ShuffleAnswers)
+                        if (testSession.IsFinished == false && testSession.ShuffleAnswers)
                             ShuffleArray(question.Answers);
                     }
                 }

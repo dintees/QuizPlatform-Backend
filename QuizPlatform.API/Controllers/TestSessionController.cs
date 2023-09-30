@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.Interfaces;
-using QuizPlatform.Infrastructure.Models.Question;
 using QuizPlatform.Infrastructure.Models.TestSession;
 
 namespace QuizPlatform.API.Controllers
@@ -57,16 +56,16 @@ namespace QuizPlatform.API.Controllers
         }
 
         [Authorize]
-        [HttpPost("saveAnswers/{testSessionId:int}")]
-        public async Task<ActionResult> SaveAnswers(List<UserAnswersDto> dto, [FromRoute] int testSessionId)
+        [HttpPost("saveAnswers/{testSessionId:int}/{finish:bool}")]
+        public async Task<ActionResult> SaveAnswers(List<UserAnswersDto> dto, [FromRoute] int testSessionId, bool finish)
         {
             var userId = _userContextService.UserId;
             if (userId is null)
                 return Unauthorized();
 
-            bool result = await _testSessionService.SaveUserAnswersAsync(dto, testSessionId, userId.Value);
+            await _testSessionService.SaveUserAnswersAsync(dto, testSessionId, finish, userId.Value);
 
-            return result ? Ok() : BadRequest();
+            return Ok();
         }
     }
 }
