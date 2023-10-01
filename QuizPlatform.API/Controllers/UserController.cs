@@ -46,6 +46,29 @@ public class UserController : ControllerBase
         return BadRequest(UserErrorMessages.AccountNotConfirmed);
     }
 
+    [HttpPost("forgotPassword")]
+    public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
+    {
+        await _userService.GenerateCodeForNewPassword(dto.Email!);
+        return Ok(dto.Email);
+    }
+
+    [Authorize]
+    [HttpGet("getUserProfile")]
+    public async Task<ActionResult> GetUserProfileInformation()
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null)
+            return Unauthorized();
+
+        var userResult = await _userService.GetUserProfileInformation(userId.Value);
+
+        if (userResult is null)
+            return BadRequest();
+
+        return Ok(userResult);
+    }
+
     [Authorize]
     [HttpPut("edit")]
     public async Task<ActionResult> ChangeUserProperties(ChangeUserPropertiesDto dto)

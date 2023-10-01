@@ -118,7 +118,7 @@ public class UserService : IUserService
 
         user.AccountConfirmed = true;
         _userTokenRepository.DeleteToken(userToken);
-        return await _userTokenRepository.SaveAsync() && await _userRepository.SaveAsync();
+        return await _userRepository.SaveAsync();
     }
 
     public async Task<string?> ChangeUserPropertiesAsync(int userId, ChangeUserPropertiesDto dto)
@@ -131,7 +131,21 @@ public class UserService : IUserService
 
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
-    
+
+    public async Task<UserDto?> GetUserProfileInformation(int userId)
+    {
+        var user = await _userRepository.GetUserByIdAsync(userId);
+
+        return _mapper.Map<UserDto>(user);
+    }
+
+    public async Task GenerateCodeForNewPassword(string email)
+    {
+        // TODO add feature
+        var token = GenerateToken(8);
+        await SendEmailWithForgottenPasswordTokenAsync(email, token);
+    }
+
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
     {
         var foundUser = await _userRepository.GetUserByIdAsync(id);
@@ -155,6 +169,20 @@ public class UserService : IUserService
         for (int i = 0; i < size; ++i)
             tokenBuilder.Append(rand.Next(10));
         return tokenBuilder.ToString();
+    }
+
+    private async Task SendEmailWithForgottenPasswordTokenAsync(string email, string token)
+    {
+        var subject = "Fiszlet - new password";
+        var content = $@"
+Hi {email}!,
+to change the password, please paste this code into the form: {token}
+
+Regards,
+Fiszlet";
+
+        var message = _emailBuilder.WithSubject(subject).To(email).WithMessage(content);
+        await _emailService.SendAsync(message.Build());
     }
 
     private async Task SendEmailWithRegistrationTokenAsync(string email, string name, string token)

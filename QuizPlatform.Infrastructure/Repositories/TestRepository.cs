@@ -18,7 +18,7 @@ namespace QuizPlatform.Infrastructure.Repositories
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
             var set = await _context.Tests.AsSplitQuery()
-            .Include(e => e.Questions)!.ThenInclude(e => e!.Answers)
+            .Include(e => e.Questions.Where(q => !q.IsDeleted))!.ThenInclude(e => e!.Answers)
             .FirstOrDefaultAsync(s => s.Id == id);
 
             return set;
