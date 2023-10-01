@@ -34,7 +34,11 @@ namespace QuizPlatform.API.Controllers
         [HttpGet("get/{testSessionId:int}")]
         public async Task<ActionResult> GetTestSession(int testSessionId)
         {
-            var result = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId);
+            var userId = _userContextService.UserId;
+            if (userId is null)
+                return Unauthorized();
+
+            var result = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId.Value);
             
             return result.Success ? Ok(result.Value) : NotFound(result.ErrorMessage);
         }

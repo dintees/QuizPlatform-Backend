@@ -77,11 +77,14 @@ namespace QuizPlatform.Infrastructure.Services
             return await _testSessionRepository.SaveAsync();
         }
 
-        public async Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId)
+        public async Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
         {
             var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
             if (testSession is null)
                 return new Result<TestDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
+
+            if (testSession.UserId != userId)
+                return new Result<TestDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
 
             var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 

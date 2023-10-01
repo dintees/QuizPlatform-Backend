@@ -10,4 +10,6 @@ public interface IUserService
     Task<string?> ChangePasswordAsync(int userId, ChangeUserPasswordDto user);
     Task<bool> ConfirmAccountAsync(string email, string code);
     Task<string?> ChangeUserPropertiesAsync(int userId, ChangeUserPropertiesDto dto);
+    Task<UserDto?> GetUserProfileInformation(int userId);
+    Task GenerateCodeForNewPassword(string dtoEmail);
 }

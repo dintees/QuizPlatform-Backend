@@ -13,6 +13,7 @@ public class MainProfile : Profile
     {
         // User
         CreateMap<UserRegisterDto, User>();
+        CreateMap<User, UserDto>();
 
         // Question
         CreateMap<CreateQuestionDto, Question>()
