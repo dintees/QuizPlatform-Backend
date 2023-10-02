@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.API.Extensions;
 using QuizPlatform.API.Middlewares;
 using QuizPlatform.Infrastructure;
 using QuizPlatform.Infrastructure.Authentication;
+using QuizPlatform.Infrastructure.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +62,11 @@ builder.Services.AddControllers().AddJsonOptions(x =>
 
 
 var app = builder.Build();
+
+using var scope = app.Services.CreateScope();
+await using var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+if ((await context.Database.GetPendingMigrationsAsync()).Any()) await context.Database.MigrateAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

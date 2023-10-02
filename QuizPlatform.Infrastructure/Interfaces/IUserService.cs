@@ -11,5 +11,7 @@ public interface IUserService
     Task<bool> ConfirmAccountAsync(string email, string code);
     Task<string?> ChangeUserPropertiesAsync(int userId, ChangeUserPropertiesDto dto);
     Task<UserDto?> GetUserProfileInformation(int userId);
-    Task GenerateCodeForNewPassword(string dtoEmail);
+    Task<string?> GenerateCodeForNewPasswordAsync(string dtoEmail);
+    Task<string?> CheckPasswordCodeValidityAsync(string email, string code);
+    Task<string?> ResetPasswordAsync(ForgotPasswordDto dto);
 }

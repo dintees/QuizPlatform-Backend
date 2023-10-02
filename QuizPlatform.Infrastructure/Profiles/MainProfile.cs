@@ -14,6 +14,7 @@ public class MainProfile : Profile
         // User
         CreateMap<UserRegisterDto, User>();
         CreateMap<User, UserDto>();
+        CreateMap<ForgotPasswordDto, ChangeUserPasswordDto>();
 
         // Question
         CreateMap<CreateQuestionDto, Question>()

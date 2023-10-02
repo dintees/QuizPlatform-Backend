@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using QuizPlatform.Infrastructure.Authentication;
 using QuizPlatform.Infrastructure.Builders;
 using QuizPlatform.Infrastructure.Entities;
+using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
@@ -89,7 +90,7 @@ public class UserService : IUserService
 
         await _userRepository.SaveAsync();
 
-        var userToken = new UserToken { Token = GenerateToken(8), UserId = user.Id, ExpirationTime = DateTime.Now.AddMinutes(30) };
+        var userToken = new UserToken { Token = GenerateToken(8), UserId = user.Id, ExpirationTime = DateTime.Now.AddMinutes(30), UserTokenType = UserTokenType.Registration };
         await _userTokenRepository.AddAsync(userToken);
 
         // send email
@@ -103,7 +104,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetUserByEmailAsync(email, false);
         if (user is null) return false;
 
-        var userToken = await _userTokenRepository.GetByUserIdAsync(user.Id);
+        var userToken = await _userTokenRepository.GetByUserIdAndTypeAsync(user.Id, UserTokenType.Registration);
         if (userToken is null) return false;
         if (userToken.ExpirationTime < DateTime.Now)
         {
@@ -139,11 +140,49 @@ public class UserService : IUserService
         return _mapper.Map<UserDto>(user);
     }
 
-    public async Task GenerateCodeForNewPassword(string email)
+    public async Task<string?> GenerateCodeForNewPasswordAsync(string email)
     {
-        // TODO add feature
-        var token = GenerateToken(8);
-        await SendEmailWithForgottenPasswordTokenAsync(email, token);
+        var user = await _userRepository.GetUserByEmailAsync(email);
+        if (user is null) return UserTokenErrorMessages.NoUserWithThatEmail;
+
+        var userToken = new UserToken { Token = GenerateToken(8), UserId = user.Id, ExpirationTime = DateTime.Now.AddMinutes(30), UserTokenType = UserTokenType.PasswordReminder };
+        await _userTokenRepository.AddAsync(userToken);
+
+        // send email
+        await SendEmailWithForgottenPasswordTokenAsync(email, userToken.Token);
+
+        return await _userTokenRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
+    }
+
+    public async Task<string?> CheckPasswordCodeValidityAsync(string email, string code)
+    {
+        var user = await _userRepository.GetUserByEmailAsync(email);
+        if (user is null)
+            return UserErrorMessages.PersonWithThisIdDoesNotExist;
+
+        var sentCode = await _userTokenRepository.GetByUserIdAndTypeAsync(user.Id, UserTokenType.PasswordReminder);
+        if (sentCode is null) return GeneralErrorMessages.NotFound;
+
+        return sentCode.Token == code ? null : UserTokenErrorMessages.IncorrectCode;
+    }
+
+    public async Task<string?> ResetPasswordAsync(ForgotPasswordDto dto)
+    {
+        var user = await _userRepository.GetUserByEmailAsync(dto.Email!);
+        if (user is null)
+            return UserErrorMessages.PersonWithThisIdDoesNotExist;
+
+        var changeUserPasswordDto = _mapper.Map<ChangeUserPasswordDto>(dto);
+        var validationResult = await _changeUserPasswordValidator.ValidateAsync(changeUserPasswordDto);
+        if (!validationResult.IsValid) return validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+
+        var userToken = await _userTokenRepository.GetByUserIdAndTypeAsync(user.Id, UserTokenType.PasswordReminder);
+        if (userToken != null) _userTokenRepository.DeleteToken(userToken);
+
+        user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        _userRepository.UpdateUser(user);
+
+        return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)

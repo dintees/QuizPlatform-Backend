@@ -49,8 +49,24 @@ public class UserController : ControllerBase
     [HttpPost("forgotPassword")]
     public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
     {
-        await _userService.GenerateCodeForNewPassword(dto.Email!);
-        return Ok(dto.Email);
+        var result = await _userService.GenerateCodeForNewPasswordAsync(dto.Email!);
+        return result == null ? Ok() : BadRequest(result);
+    }
+
+    [HttpPost("forgotPassword/{code}")]
+    public async Task<ActionResult> ForgotPasswordCodeConfirmation(ForgotPasswordDto dto, string code)
+    {
+        var result = await _userService.CheckPasswordCodeValidityAsync(dto.Email!, code);
+
+        return result == null ? Ok() : BadRequest(result);
+    }
+
+    [HttpPost("forgotPassword/changePassword")]
+    public async Task<ActionResult> ChangePassword(ForgotPasswordDto dto)
+    {
+        var result = await _userService.ResetPasswordAsync(dto);
+
+        return result == null ? Ok() : BadRequest(result);
     }
 
     [Authorize]
