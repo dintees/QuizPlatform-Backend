@@ -90,6 +90,7 @@ public class TestService : ITestService
 
         test.Title = dto.Title;
         test.Description = dto.Description;
+        test.IsPublic = dto.IsPublic;
 
         var questionsEntity = test.Questions;
 
@@ -159,7 +160,6 @@ public class TestService : ITestService
         var question = await _questionRepository.GetQuestionByIdAsync(questionId, false);
 
         if (test is null || question is null) return false;
-
 
         try
         {

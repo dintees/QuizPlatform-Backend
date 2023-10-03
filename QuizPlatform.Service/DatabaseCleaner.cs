@@ -1,4 +1,5 @@
-﻿using QuizPlatform.Infrastructure.Interfaces;
+﻿using QuizPlatform.Infrastructure.Enums;
+using QuizPlatform.Infrastructure.Interfaces;
 
 namespace QuizPlatform.Service
 {
@@ -20,9 +21,10 @@ namespace QuizPlatform.Service
 
             foreach (var expiredUserToken in expiredUserTokens)
             {
-                var user = await _userRepository.GetUserByIdAsync(expiredUserToken.UserId);
                 _userTokenRepository.DeleteToken(expiredUserToken);
 
+                if (expiredUserToken.UserTokenType != UserTokenType.Registration) continue;
+                var user = await _userRepository.GetUserByIdAsync(expiredUserToken.UserId);
                 if (user is not null)
                     _userRepository.DeleteUser(user);
             }
@@ -30,6 +32,5 @@ namespace QuizPlatform.Service
             await _userTokenRepository.SaveAsync();
             Console.WriteLine("Cleaned userTokens entity.");
         }
-
     }
 }

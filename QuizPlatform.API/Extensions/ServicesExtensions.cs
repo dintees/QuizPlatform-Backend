@@ -27,7 +27,7 @@ namespace QuizPlatform.API.Extensions
             services.AddCors(opts =>
             {
                 opts.AddPolicy("DefaultPolicy",
-                    policyOptions => { policyOptions.WithOrigins(configuration.GetSection("FrontendUrl").Value!).AllowAnyHeader().AllowAnyMethod(); });
+                    policyOptions => { policyOptions.WithOrigins(configuration.GetSection("FrontendUrl").Value!).AllowAnyHeader().AllowAnyMethod().AllowCredentials(); });
             });
         }
     }
