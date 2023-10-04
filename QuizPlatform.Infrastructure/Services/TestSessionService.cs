@@ -3,7 +3,6 @@ using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
-using QuizPlatform.Infrastructure.Models.Test;
 using QuizPlatform.Infrastructure.Models.TestSession;
 using QuizPlatform.Infrastructure.Models;
 
@@ -71,52 +70,58 @@ namespace QuizPlatform.Infrastructure.Services
             if (testSession is not null)
             {
                 testSession.TsUpdate = DateTime.Now;
-                if (finish) testSession.IsFinished = true;
+                if (finish) testSession.IsCompleted = true;
             }
 
             return await _testSessionRepository.SaveAsync();
         }
 
-        public async Task<Result<TestDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
+        public async Task<Result<TestSessionDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
         {
             var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
             if (testSession is null)
-                return new Result<TestDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
+                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
 
             if (testSession.UserId != userId)
-                return new Result<TestDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
+                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
 
             var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
             // Shuffle questions and answers
-            if (testSession?.Test?.Questions is not null)
+            var questions = testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
+            if (testSession.Test?.Questions is not null)
             {
-                if (testSession.IsFinished == false && testSession.ShuffleQuestions)
-                    ShuffleArray(testSession.Test.Questions);
+                if (testSession.IsCompleted == false && testSession.ShuffleQuestions)
+                    ShuffleArray(questions);
 
-                foreach (var question in testSession.Test.Questions)
-                {
-                    if (question.Answers is not null)
+                if (questions != null)
+                    foreach (var question in questions)
                     {
-                        foreach (var answer in question.Answers)
+                        if (question.Answers is not null)
                         {
-                            if (question.QuestionType == QuestionType.ShortAnswer)
+                            foreach (var answer in question.Answers)
                             {
-                                question.Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = userAnswers?.Find(e => e.QuestionId == question.Id)?.ShortAnswerValue ?? string.Empty, Correct = false } };
-                                continue;
+                                if (question.QuestionType == QuestionType.ShortAnswer)
+                                {
+                                    question.Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = userAnswers?.Find(e => e.QuestionId == question.Id)?.ShortAnswerValue ?? string.Empty, Correct = false } };
+                                    continue;
+                                }
+
+                                answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
                             }
 
-                            answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
+                            if (testSession.IsCompleted == false && testSession.ShuffleAnswers)
+                                ShuffleArray(question.Answers);
                         }
-
-                        if (testSession.IsFinished == false && testSession.ShuffleAnswers)
-                            ShuffleArray(question.Answers);
                     }
-                }
             }
-            var testDto = _mapper.Map<TestDto>(testSession?.Test);
 
-            return new Result<TestDto?> { Success = true, Value = testDto };
+            if (questions != null) testSession.Test!.Questions = questions;
+            var testDto = _mapper.Map<TestSessionDto>(testSession.Test);
+            testDto.OneQuestionMode = testSession.OneQuestionMode;
+            testDto.IsCompleted = testSession.IsCompleted;
+
+            return new Result<TestSessionDto?> { Success = true, Value = testDto };
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)

@@ -5,5 +5,6 @@
         public int TestId { get; set; }
         public bool ShuffleQuestions { get; set; }
         public bool ShuffleAnswers { get; set; }
+        public bool OneQuestionMode { get; set; }
     }
 }

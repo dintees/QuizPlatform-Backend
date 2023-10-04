@@ -55,6 +55,7 @@ public class MainProfile : Profile
 
         // TestSession
         CreateMap<CreateTestSessionDto, TestSession>();
+        CreateMap<Test, TestSessionDto>();
         CreateMap<TestSession, UserTestSessionDto>()
             .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title));
     }

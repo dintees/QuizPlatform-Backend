@@ -23,7 +23,7 @@ namespace QuizPlatform.Infrastructure.Repositories
         public async Task<List<TestSession>> GetByUserIdWithTestAsync(int userId, bool sort = false)
         {
             if (sort)
-                return await _context.TestSessions.Include(e => e.Test).Where(e => e.UserId == userId).OrderBy(e => e.IsFinished).ThenByDescending(e => e.TsUpdate).ToListAsync();
+                return await _context.TestSessions.Include(e => e.Test).Where(e => e.UserId == userId).OrderBy(e => e.IsCompleted).ThenByDescending(e => e.TsUpdate).ToListAsync();
             return await _context.TestSessions.Include(e => e.Test).Where(e => e.UserId == userId).ToListAsync();
         }
 
