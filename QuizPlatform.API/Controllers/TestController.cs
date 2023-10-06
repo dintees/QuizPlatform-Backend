@@ -20,7 +20,7 @@ public class TestController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult> GetAllUserSets()
+    public async Task<ActionResult> GetAllUserTests()
     {
         var userId = _userContextService.UserId;
 
@@ -40,7 +40,7 @@ public class TestController : ControllerBase
 
     [Authorize]
     [HttpPost("create")]
-    public async Task<ActionResult> CreateSet(CreateTestDto testDto)
+    public async Task<ActionResult> CreateTest(CreateTestDto testDto)
     {
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
@@ -52,7 +52,7 @@ public class TestController : ControllerBase
 
     [Authorize]
     [HttpPost("createWithQuestions")]
-    public async Task<ActionResult> CreateSetWithQuestions(CreateTestDto testDto)
+    public async Task<ActionResult> CreateTestWithQuestions(CreateTestDto testDto)
     {
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
@@ -63,7 +63,7 @@ public class TestController : ControllerBase
     }
 
     [HttpPost("addQuestion/{setId:int}")]
-    public async Task<ActionResult> AddQuestionToSet(int setId, [FromBody] int questionId)
+    public async Task<ActionResult> AddQuestionToTest(int setId, [FromBody] int questionId)
     {
         bool edited = await _testService.AddQuestionToTestAsync(setId, questionId);
 
@@ -73,7 +73,7 @@ public class TestController : ControllerBase
 
     [Authorize]
     [HttpPut("edit/{id:int}")]
-    public async Task<ActionResult> EditSetProperties(int id, TestDto testDto)
+    public async Task<ActionResult> EditTestProperties(int id, TestDto testDto)
     {
         var result = await _testService.ModifyTestAsync(id, testDto);
         if (result.Success) return Ok(result);

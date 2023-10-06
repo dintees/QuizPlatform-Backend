@@ -191,10 +191,6 @@ public class TestService : ITestService
         if (test is null) return false;
         test.IsDeleted = true;
 
-        if (test.Questions is not null)
-            foreach (var question in test.Questions)
-                question.IsDeleted = true;
-
         _testRepository.Update(test);
         return await _testRepository.SaveAsync();
     }

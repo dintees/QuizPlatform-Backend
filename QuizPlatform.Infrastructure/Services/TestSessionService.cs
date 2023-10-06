@@ -33,13 +33,14 @@ namespace QuizPlatform.Infrastructure.Services
         public async Task<List<UserTestSessionDto>> GetActiveUserTestSessionsAsync(int userId)
         {
             var testSession = await _testSessionRepository.GetByUserIdWithTestAsync(userId, true);
-            return _mapper.Map<List<UserTestSessionDto>>(testSession);
+            return _mapper.Map<List<UserTestSessionDto>>(testSession.Where(e => e.Test?.IsDeleted == false || (e.Test?.IsDeleted == true && e.IsCompleted)).ToList());
         }
 
         public async Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, bool finish, int userId)
         {
             var currentlySavedEntities = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
+            // Insert/update user answers to UserAnswers entity
             foreach (var userAnswer in dto)
             {
                 if (userAnswer.ShortAnswerValue is null)
@@ -66,14 +67,44 @@ namespace QuizPlatform.Infrastructure.Services
             foreach (var entity in currentlySavedEntities!.Where(entity => entity.ShortAnswerValue is null))
                 _userAnswersRepository.Delete(entity);
 
-            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
+            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
             if (testSession is not null)
             {
                 testSession.TsUpdate = DateTime.Now;
-                if (finish) testSession.IsCompleted = true;
+                if (finish)
+                {
+                    var score = GetScoreResult(dto, testSession);
+                    // TODO score to the database
+                    testSession.IsCompleted = true;
+                }
             }
 
             return await _testSessionRepository.SaveAsync();
+        }
+
+        private static int GetScoreResult(List<UserAnswersDto> dto, TestSession testSession)
+        {
+            int score = 0;
+            var correctAnswers = GetCorrectAnswers(testSession);
+
+            foreach (var userAnswers in dto)
+            {
+                if (userAnswers.ShortAnswerValue is not null)
+                {
+                    var correctShortAnswersArr = correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)
+                        ?.ShortAnswerValue?.Split(", ");
+
+                    if (correctShortAnswersArr is not null &&
+                        correctShortAnswersArr.Any(e => e == userAnswers.ShortAnswerValue))
+                        score++;
+                }
+                else
+                {
+                    score += userAnswers.AnswerIds!.SequenceEqual(correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.AnswerIds!) ? 1 : 0;
+                }
+            }
+
+            return score;
         }
 
         public async Task<Result<TestSessionDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
@@ -85,6 +116,9 @@ namespace QuizPlatform.Infrastructure.Services
             if (testSession.UserId != userId)
                 return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
 
+            List<UserAnswersDto>? correctAnswers = null;
+
+            if (testSession.IsCompleted) correctAnswers = GetCorrectAnswers(testSession);
             var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
             // Shuffle questions and answers
@@ -120,8 +154,32 @@ namespace QuizPlatform.Infrastructure.Services
             var testDto = _mapper.Map<TestSessionDto>(testSession.Test);
             testDto.OneQuestionMode = testSession.OneQuestionMode;
             testDto.IsCompleted = testSession.IsCompleted;
+            testDto.CorrectAnswers = correctAnswers;
 
             return new Result<TestSessionDto?> { Success = true, Value = testDto };
+        }
+
+        private static List<UserAnswersDto> GetCorrectAnswers(TestSession testSession)
+        {
+            List<UserAnswersDto> correctAnswers = new();
+            var correctAnswersFromEntity = testSession.Test!.Questions.Where(e => !e.IsDeleted);
+            foreach (var question in correctAnswersFromEntity)
+            {
+                if (question.QuestionType == QuestionType.ShortAnswer)
+                    correctAnswers.Add(new UserAnswersDto
+                    {
+                        QuestionId = question.Id,
+                        ShortAnswerValue = string.Join(", ", question.Answers!.Select(e => e.Content))
+                    });
+                else
+                    correctAnswers.Add(new UserAnswersDto
+                    {
+                        QuestionId = question.Id,
+                        AnswerIds = question.Answers?.Where(e => e.Correct).Select(e => e.Id).ToList()
+                    });
+            }
+
+            return correctAnswers;
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)

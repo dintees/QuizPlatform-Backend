@@ -6,5 +6,6 @@ namespace QuizPlatform.Infrastructure.Models.TestSession
     {
         public bool OneQuestionMode { get; set; }
         public bool IsCompleted { get; set; }
+        public List<UserAnswersDto>? CorrectAnswers { get; set; }
     }
 }
