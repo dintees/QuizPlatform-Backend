@@ -7,5 +7,7 @@ namespace QuizPlatform.Infrastructure.Models.TestSession
         public bool OneQuestionMode { get; set; }
         public bool IsCompleted { get; set; }
         public List<UserAnswersDto>? CorrectAnswers { get; set; }
+        public int Score { get; set; }
+        public int MaxScore { get; set; }
     }
 }

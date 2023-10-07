@@ -1,10 +1,12 @@
-﻿using AutoMapper;
+﻿using System.Globalization;
+using AutoMapper;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.TestSession;
 using QuizPlatform.Infrastructure.Models;
+using System.Text.RegularExpressions;
 
 namespace QuizPlatform.Infrastructure.Services
 {
@@ -34,6 +36,87 @@ namespace QuizPlatform.Infrastructure.Services
         {
             var testSession = await _testSessionRepository.GetByUserIdWithTestAsync(userId, true);
             return _mapper.Map<List<UserTestSessionDto>>(testSession.Where(e => e.Test?.IsDeleted == false || (e.Test?.IsDeleted == true && e.IsCompleted)).ToList());
+        }
+
+        public async Task<Result<TestSessionDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
+        {
+            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
+            if (testSession is null)
+                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
+
+            if (testSession.UserId != userId)
+                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
+
+            var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
+            List<UserAnswersDto>? correctAnswers = null;
+            int score = 0;
+
+            if (testSession.IsCompleted)
+            {
+                correctAnswers = GetCorrectAnswers(testSession);
+                var userAnswersDto = new List<UserAnswersDto>();
+
+                if (userAnswers is not null)
+                {
+
+                    foreach (var userAnswer in userAnswers)
+                    {
+                        var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
+                        if (found is null)
+                            userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
+                        else
+                            found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    }
+                }
+
+                score = GetScoreResult(userAnswersDto, testSession);
+                foreach (var correctAnswer in correctAnswers)
+                {
+                    correctAnswer.IsCorrect = userAnswersDto.Find(e => e.QuestionId == correctAnswer.QuestionId)?.IsCorrect ?? false;
+                }
+            }
+
+
+            // Shuffle questions and answers
+            var questions = testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
+            if (testSession.Test?.Questions is not null)
+            {
+                if (testSession.IsCompleted == false && testSession.ShuffleQuestions)
+                    ShuffleArray(questions);
+
+                if (questions != null)
+                    foreach (var question in questions)
+                    {
+                        if (question.Answers is not null)
+                        {
+                            foreach (var answer in question.Answers)
+                            {
+                                if (question.QuestionType == QuestionType.ShortAnswer)
+                                {
+                                    question.Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = userAnswers?.Find(e => e.QuestionId == question.Id)?.ShortAnswerValue ?? string.Empty, Correct = false } };
+                                    continue;
+                                }
+
+                                answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
+                            }
+
+                            if (testSession.IsCompleted == false && testSession.ShuffleAnswers)
+                                ShuffleArray(question.Answers);
+                        }
+                    }
+            }
+
+            if (questions != null) testSession.Test!.Questions = questions;
+
+
+            var testDto = _mapper.Map<TestSessionDto>(testSession.Test);
+            testDto.OneQuestionMode = testSession.OneQuestionMode;
+            testDto.IsCompleted = testSession.IsCompleted;
+            testDto.CorrectAnswers = correctAnswers;
+            testDto.Score = score;
+            testDto.MaxScore = questions?.Count ?? 0;
+
+            return new Result<TestSessionDto?> { Success = true, Value = testDto };
         }
 
         public async Task<bool> SaveUserAnswersAsync(List<UserAnswersDto> dto, int testSessionId, bool finish, int userId)
@@ -74,89 +157,13 @@ namespace QuizPlatform.Infrastructure.Services
                 if (finish)
                 {
                     var score = GetScoreResult(dto, testSession);
-                    // TODO score to the database
+                    testSession.Score = score;
+                    testSession.MaxScore = testSession.Test!.Questions.Count(e => !e.IsDeleted);
                     testSession.IsCompleted = true;
                 }
             }
 
             return await _testSessionRepository.SaveAsync();
-        }
-
-        private static int GetScoreResult(List<UserAnswersDto> dto, TestSession testSession)
-        {
-            int score = 0;
-            var correctAnswers = GetCorrectAnswers(testSession);
-
-            foreach (var userAnswers in dto)
-            {
-                if (userAnswers.ShortAnswerValue is not null)
-                {
-                    var correctShortAnswersArr = correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)
-                        ?.ShortAnswerValue?.Split(", ");
-
-                    if (correctShortAnswersArr is not null &&
-                        correctShortAnswersArr.Any(e => e == userAnswers.ShortAnswerValue))
-                        score++;
-                }
-                else
-                {
-                    score += userAnswers.AnswerIds!.SequenceEqual(correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.AnswerIds!) ? 1 : 0;
-                }
-            }
-
-            return score;
-        }
-
-        public async Task<Result<TestSessionDto?>> GetTestByTestSessionIdAsync(int testSessionId, int userId)
-        {
-            var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
-            if (testSession is null)
-                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.NotFound };
-
-            if (testSession.UserId != userId)
-                return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
-
-            List<UserAnswersDto>? correctAnswers = null;
-
-            if (testSession.IsCompleted) correctAnswers = GetCorrectAnswers(testSession);
-            var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
-
-            // Shuffle questions and answers
-            var questions = testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
-            if (testSession.Test?.Questions is not null)
-            {
-                if (testSession.IsCompleted == false && testSession.ShuffleQuestions)
-                    ShuffleArray(questions);
-
-                if (questions != null)
-                    foreach (var question in questions)
-                    {
-                        if (question.Answers is not null)
-                        {
-                            foreach (var answer in question.Answers)
-                            {
-                                if (question.QuestionType == QuestionType.ShortAnswer)
-                                {
-                                    question.Answers = new List<QuestionAnswer> { new QuestionAnswer { Content = userAnswers?.Find(e => e.QuestionId == question.Id)?.ShortAnswerValue ?? string.Empty, Correct = false } };
-                                    continue;
-                                }
-
-                                answer.Correct = userAnswers!.Any(e => e.QuestionAnswerId == answer.Id);
-                            }
-
-                            if (testSession.IsCompleted == false && testSession.ShuffleAnswers)
-                                ShuffleArray(question.Answers);
-                        }
-                    }
-            }
-
-            if (questions != null) testSession.Test!.Questions = questions;
-            var testDto = _mapper.Map<TestSessionDto>(testSession.Test);
-            testDto.OneQuestionMode = testSession.OneQuestionMode;
-            testDto.IsCompleted = testSession.IsCompleted;
-            testDto.CorrectAnswers = correctAnswers;
-
-            return new Result<TestSessionDto?> { Success = true, Value = testDto };
         }
 
         private static List<UserAnswersDto> GetCorrectAnswers(TestSession testSession)
@@ -180,6 +187,54 @@ namespace QuizPlatform.Infrastructure.Services
             }
 
             return correctAnswers;
+        }
+
+        private static int GetScoreResult(List<UserAnswersDto> userAnswersList, TestSession testSession)
+        {
+            int score = 0;
+            var correctAnswers = GetCorrectAnswers(testSession);
+
+            foreach (var userAnswers in userAnswersList)
+            {
+                if (userAnswers.ShortAnswerValue is not null)
+                {
+                    // string validation
+                    var correctShortAnswersArr = correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.ShortAnswerValue?.Split(", ");
+                    var userAnswer = Regex.Replace(userAnswers.ShortAnswerValue, @"\s+", " ").Trim().ToLower();
+                    userAnswer = ConvertFractions(userAnswer);
+
+                    if (correctShortAnswersArr is not null && correctShortAnswersArr.Any(e => e.ToLower() == userAnswer))
+                    {
+                        userAnswers.IsCorrect = true;
+                        score++;
+                    }
+                }
+                else
+                {
+                    bool isCorrect = userAnswers.AnswerIds!.SequenceEqual(correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.AnswerIds!);
+                    if (isCorrect)
+                    {
+                        userAnswers.IsCorrect = true;
+                        score++;
+                    }
+                }
+            }
+
+            return score;
+        }
+
+        private static string ConvertFractions(string input)
+        {
+            string pattern = @"(\d+)\s*/\s*(\d+)";
+            string output = Regex.Replace(input, pattern, match =>
+            {
+                int numerator = int.Parse(match.Groups[1].Value);
+                int denominator = int.Parse(match.Groups[2].Value);
+                double result = (double)numerator / denominator;
+                return result.ToString("0.##", CultureInfo.InvariantCulture);
+            });
+
+            return output;
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)
