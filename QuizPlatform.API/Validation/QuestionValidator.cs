@@ -36,7 +36,7 @@ namespace QuizPlatform.API.Validation
 
                 if (e.QuestionType == QuestionType.ShortAnswer)
                 {
-                    if (e.Answers is not null)
+                    if (e.Answers is null || e.Answers.Count == 0)
                         context.AddFailure("Answers", QuestionErrorMessages.WrongNumberOfAnswers);
                 }
             });
