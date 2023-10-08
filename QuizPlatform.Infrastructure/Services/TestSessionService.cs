@@ -198,7 +198,7 @@ namespace QuizPlatform.Infrastructure.Services
             {
                 if (userAnswers.ShortAnswerValue is not null)
                 {
-                    // string validation
+                    // shortAnswer string validation
                     var correctShortAnswersArr = correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.ShortAnswerValue?.Split(", ");
                     var userAnswer = Regex.Replace(userAnswers.ShortAnswerValue, @"\s+", " ").Trim().ToLower();
                     userAnswer = ConvertFractions(userAnswer);
