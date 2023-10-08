@@ -4,6 +4,7 @@ using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Models.User;
 using QuizPlatform.Infrastructure.Models.Test;
 using QuizPlatform.Infrastructure.Models.TestSession;
+using QuizPlatform.Infrastructure.Models.Flashcard;
 
 namespace QuizPlatform.Infrastructure.Profiles;
 
@@ -14,6 +15,7 @@ public class MainProfile : Profile
         // User
         CreateMap<UserRegisterDto, User>();
         CreateMap<User, UserDto>();
+        CreateMap<ForgotPasswordDto, ChangeUserPasswordDto>();
 
         // Question
         CreateMap<CreateQuestionDto, Question>()
@@ -54,7 +56,13 @@ public class MainProfile : Profile
 
         // TestSession
         CreateMap<CreateTestSessionDto, TestSession>();
+        CreateMap<Test, TestSessionDto>();
         CreateMap<TestSession, UserTestSessionDto>()
             .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title));
+
+
+        // Flashcards
+        CreateMap<Flashcard, UserFlashcardDto>();
+        CreateMap<FlashcardItem, FlashcardItemDto>();
     }
 }

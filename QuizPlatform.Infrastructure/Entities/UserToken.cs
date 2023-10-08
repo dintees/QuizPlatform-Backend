@@ -1,4 +1,6 @@
-﻿namespace QuizPlatform.Infrastructure.Entities
+﻿using QuizPlatform.Infrastructure.Enums;
+
+namespace QuizPlatform.Infrastructure.Entities
 {
     public class UserToken
     {
@@ -7,5 +9,6 @@
         public User? User { get; set; }
         public int UserId { get; set; }
         public DateTime ExpirationTime { get; set; }
+        public UserTokenType UserTokenType { get; set; }
     }
 }

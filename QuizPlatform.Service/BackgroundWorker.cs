@@ -19,7 +19,7 @@ namespace QuizPlatform.Service
             {
                 var now = DateTime.Now;
 
-                var scheduledTime = new DateTime(now.Year, now.Month, now.Day, 11, 43, 0);
+                var scheduledTime = new DateTime(now.Year, now.Month, now.Day, 18, 0, 0);
 
                 if (now.Hour == scheduledTime.Hour)
                 {

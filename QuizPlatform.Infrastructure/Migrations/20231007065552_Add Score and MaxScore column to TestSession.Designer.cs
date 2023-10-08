@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QuizPlatform.Infrastructure.Entities;
 
@@ -11,9 +12,11 @@ using QuizPlatform.Infrastructure.Entities;
 namespace QuizPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231007065552_Add Score and MaxScore column to TestSession")]
+    partial class AddScoreandMaxScorecolumntoTestSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,66 +24,6 @@ namespace QuizPlatform.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Flashcard", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TsInsert")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("TsUpdate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Flashcards");
-                });
-
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.FlashcardItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FirstSide")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("FlashcardId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SecondSide")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TsInsert")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("TsUpdate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlashcardId");
-
-                    b.ToTable("FlashcardItems");
-                });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Question", b =>
                 {
@@ -374,24 +317,6 @@ namespace QuizPlatform.Infrastructure.Migrations
                     b.ToTable("UserTokens");
                 });
 
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Flashcard", b =>
-                {
-                    b.HasOne("QuizPlatform.Infrastructure.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.FlashcardItem", b =>
-                {
-                    b.HasOne("QuizPlatform.Infrastructure.Entities.Flashcard", null)
-                        .WithMany("FlashcardItems")
-                        .HasForeignKey("FlashcardId");
-                });
-
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Question", b =>
                 {
                     b.HasOne("QuizPlatform.Infrastructure.Entities.Test", "Test")
@@ -496,11 +421,6 @@ namespace QuizPlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Flashcard", b =>
-                {
-                    b.Navigation("FlashcardItems");
                 });
 
             modelBuilder.Entity("QuizPlatform.Infrastructure.Entities.Question", b =>

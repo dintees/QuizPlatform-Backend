@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using QuizPlatform.Infrastructure.Entities;
+using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.Interfaces;
 
 namespace QuizPlatform.Infrastructure.Repositories
@@ -14,9 +15,9 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<UserToken?> GetByUserIdAsync(int id)
+        public async Task<UserToken?> GetByUserIdAndTypeAsync(int id, UserTokenType userTokenType)
         {
-            return await _context.UserTokens.FirstOrDefaultAsync(e => e.UserId == id);
+            return await _context.UserTokens.OrderByDescending(e => e.ExpirationTime).FirstOrDefaultAsync(e => e.UserId == id && e.UserTokenType == userTokenType);
         }
 
         public async Task AddAsync(UserToken entity)

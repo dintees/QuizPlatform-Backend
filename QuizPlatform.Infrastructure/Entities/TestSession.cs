@@ -9,6 +9,8 @@
         public int TestId { get; set; }
         public User? User { get; set; }
         public int UserId { get; set; }
-        public bool IsFinished { get; set; }
+        public bool IsCompleted { get; set; }
+        public int Score { get; set; }
+        public int MaxScore { get; set; }
     }
 }

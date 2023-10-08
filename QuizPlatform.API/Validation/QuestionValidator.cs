@@ -34,11 +34,11 @@ namespace QuizPlatform.API.Validation
                     }
                 }
 
-                //if (e.QuestionType == QuestionTypeName.ShortAnswer)
-                //{
-                //    if (e.Answers is not null)
-                //        context.AddFailure("Answers", QuestionErrorMessages.WrongNumberOfAnswers);
-                //}
+                if (e.QuestionType == QuestionType.ShortAnswer)
+                {
+                    if (e.Answers is not null)
+                        context.AddFailure("Answers", QuestionErrorMessages.WrongNumberOfAnswers);
+                }
             });
         }
     }

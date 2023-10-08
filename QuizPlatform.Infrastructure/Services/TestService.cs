@@ -14,67 +14,67 @@ public class TestService : ITestService
     private readonly IMapper _mapper;
     private readonly ITestRepository _testRepository;
     private readonly IQuestionRepository _questionRepository;
-    private readonly IValidator<Test> _setValidator;
+    private readonly IValidator<Test> _testValidator;
 
-    public TestService(IMapper mapper, ITestRepository testRepository, IQuestionRepository questionRepository, IValidator<Test> setValidator)
+    public TestService(IMapper mapper, ITestRepository testRepository, IQuestionRepository questionRepository, IValidator<Test> testValidator)
     {
         _mapper = mapper;
         _testRepository = testRepository;
         _questionRepository = questionRepository;
-        _setValidator = setValidator;
+        _testValidator = testValidator;
     }
 
     public async Task<List<UserTestDto>?> GetAllUserTests(int userId)
     {
-        var sets = await _testRepository.GetTestsByUserIdAsync(userId);
+        var tests = await _testRepository.GetTestsByUserIdAsync(userId);
 
-        return _mapper.Map<List<UserTestDto>?>(sets);
+        return _mapper.Map<List<UserTestDto>?>(tests);
     }
 
     public async Task<TestDto?> GetByIdAsync(int id)
     {
-        var set = await _testRepository.GetTestWithQuestionsByIdAsync(id);
-        if (set is null) return null;
-        set.Questions = set.Questions.Where(q => !q.IsDeleted).ToList();
+        var test = await _testRepository.GetTestWithQuestionsByIdAsync(id);
+        if (test is null) return null;
+        test.Questions = test.Questions.Where(q => !q.IsDeleted).ToList();
 
-        var setDto = _mapper.Map<TestDto>(set);
+        var setDto = _mapper.Map<TestDto>(test);
         return setDto;
     }
 
     public async Task<Result<int>> CreateNewTestAsync(CreateTestDto dto, int userId)
     {
-        var newSet = _mapper.Map<Test>(dto);
-        newSet.UserId = userId;
+        var newTest = _mapper.Map<Test>(dto);
+        newTest.UserId = userId;
 
-        var validationResult = await _setValidator.ValidateAsync(newSet);
+        var validationResult = await _testValidator.ValidateAsync(newTest);
         if (!validationResult.IsValid) return new Result<int> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
-        await _testRepository.AddAsync(newSet);
+        await _testRepository.AddAsync(newTest);
         return await _testRepository.SaveAsync()
-            ? new Result<int> { Success = true, Value = newSet.Id }
+            ? new Result<int> { Success = true, Value = newTest.Id }
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
     public async Task<Result<int>> ModifyTestPropertiesAsync(int id, TestDto testDto)
     {
-        var set = _mapper.Map<Test>(testDto);
-        if (set is null)
+        var test = _mapper.Map<Test>(testDto);
+        if (test is null)
             return new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
-        var validationResult = await _setValidator.ValidateAsync(set);
+        var validationResult = await _testValidator.ValidateAsync(test);
         if (!validationResult.IsValid)
             return new Result<int>
             { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
-        var setEntity = await _testRepository.GetByIdAsync(id);
-        if (setEntity is null)
+        var testEntity = await _testRepository.GetByIdAsync(id);
+        if (testEntity is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
-        setEntity.Title = set.Title;
-        setEntity.Description = set.Description;
+        testEntity.Title = test.Title;
+        testEntity.Description = test.Description;
 
-        _testRepository.Update(setEntity);
+        _testRepository.Update(testEntity);
         return await _testRepository.SaveAsync()
-            ? new Result<int> { Success = true, Value = setEntity.Id }
+            ? new Result<int> { Success = true, Value = testEntity.Id }
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
@@ -84,19 +84,20 @@ public class TestService : ITestService
         if (test is null)
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
-        var validationResult = await _setValidator.ValidateAsync(_mapper.Map<Test>(dto));
+        var validationResult = await _testValidator.ValidateAsync(_mapper.Map<Test>(dto));
         if (!validationResult.IsValid)
             return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         test.Title = dto.Title;
         test.Description = dto.Description;
+        test.IsPublic = dto.IsPublic;
 
         var questionsEntity = test.Questions;
 
         if (dto.Questions is not null)
             foreach (var question in dto.Questions)
             {
-                var foundEntity = questionsEntity?.FirstOrDefault(e => e.Id == question.Id);
+                var foundEntity = questionsEntity?.FirstOrDefault(e => e.Id == question.Id && e.Id != 0);
                 if (foundEntity is null)
                 {
                     var newQuestion = _mapper.Map<Question>(question);
@@ -135,15 +136,15 @@ public class TestService : ITestService
 
     public async Task<Result<int>> DuplicateTestAsync(int setId, int userId)
     {
-        var set = await _testRepository.GetTestWithQuestionsByIdAsync(setId);
-        if (set is null)
+        var test = await _testRepository.GetTestWithQuestionsByIdAsync(setId);
+        if (test is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
         var newSet = new Test()
         {
-            Title = string.Concat(set.Title, " - Copy"),
-            Description = set.Description,
-            Questions = set.Questions.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct }).ToList() }).ToList(),
+            Title = string.Concat(test.Title, " - Copy"),
+            Description = test.Description,
+            Questions = test.Questions.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct }).ToList() }).ToList(),
             UserId = userId
         };
 
@@ -160,10 +161,8 @@ public class TestService : ITestService
 
         if (test is null || question is null) return false;
 
-
         try
         {
-            test.Questions ??= new List<Question>();
             test.Questions.Add(question);
             return await _testRepository.SaveAsync();
         }
@@ -178,10 +177,10 @@ public class TestService : ITestService
         var test = await _testRepository.GetByIdAsync(setId);
         if (test is null) return false;
 
-        var question = test.Questions?.FirstOrDefault(x => x.Id == questionId);
+        var question = test.Questions.FirstOrDefault(x => x.Id == questionId);
         if (question is null) return false;
 
-        test.Questions?.Remove(question);
+        test.Questions.Remove(question);
         return await _testRepository.SaveAsync();
     }
 
@@ -190,10 +189,6 @@ public class TestService : ITestService
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(id, false);
         if (test is null) return false;
         test.IsDeleted = true;
-
-        if (test.Questions is not null)
-            foreach (var question in test.Questions)
-                question.IsDeleted = true;
 
         _testRepository.Update(test);
         return await _testRepository.SaveAsync();
@@ -204,7 +199,7 @@ public class TestService : ITestService
         var test = _mapper.Map<Test>(dto);
         test.UserId = userId;
 
-        var validationResult = await _setValidator.ValidateAsync(test);
+        var validationResult = await _testValidator.ValidateAsync(test);
 
         if (!validationResult.IsValid)
             return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
