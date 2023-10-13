@@ -7,6 +7,7 @@ using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.TestSession;
 using QuizPlatform.Infrastructure.Models;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks.Dataflow;
 
 namespace QuizPlatform.Infrastructure.Services
 {
@@ -48,6 +49,10 @@ namespace QuizPlatform.Infrastructure.Services
                 return new Result<TestSessionDto?> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
 
             var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
+            if (!testSession.IsCompleted && testSession.OneQuestionMode)
+            {
+                testSession.Test!.Questions = testSession.Test.Questions.Where(e => !(userAnswers!.Any(x => x.QuestionId == e.Id))).ToList();
+            }
             List<UserAnswersDto>? correctAnswers = null;
             int score = 0;
 
@@ -166,6 +171,24 @@ namespace QuizPlatform.Infrastructure.Services
             return await _testSessionRepository.SaveAsync();
         }
 
+        public async Task<bool> SaveOneUserAnswersAsync(UserAnswersDto dto, int testSessionId, bool finish, int userId)
+        {
+            if (dto.ShortAnswerValue is null)
+                foreach (var userSingleAnswer in dto.AnswerIds!)
+                    await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+            else
+                await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, ShortAnswerValue = dto.ShortAnswerValue, TestSessionId = testSessionId });
+
+            if (finish)
+            {
+                var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
+                if (testSession != null)
+                    testSession.IsCompleted = true;
+            }
+
+            return await _testSessionRepository.SaveAsync();
+        }
+
         private static List<UserAnswersDto> GetCorrectAnswers(TestSession testSession)
         {
             List<UserAnswersDto> correctAnswers = new();
@@ -211,7 +234,7 @@ namespace QuizPlatform.Infrastructure.Services
                 }
                 else
                 {
-                    bool isCorrect = userAnswers.AnswerIds!.SequenceEqual(correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.AnswerIds!);
+                    bool isCorrect = userAnswers.AnswerIds!.OrderBy(x => x).SequenceEqual(correctAnswers.Find(e => e.QuestionId == userAnswers.QuestionId)?.AnswerIds?.OrderBy(x => x)!);
                     if (isCorrect)
                     {
                         userAnswers.IsCorrect = true;

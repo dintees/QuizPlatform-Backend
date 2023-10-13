@@ -60,6 +60,19 @@ namespace QuizPlatform.API.Controllers
         }
 
         [Authorize]
+        [HttpPost("saveOneAnswer/{testSessionId:int}/{finish:bool}")]
+        public async Task<ActionResult> SaveOneAnswer(UserAnswersDto dto, [FromRoute] int testSessionId, bool finish)
+        {
+            var userId = _userContextService.UserId;
+            if (userId is null)
+                return Unauthorized();
+
+            await _testSessionService.SaveOneUserAnswersAsync(dto, testSessionId, finish, userId.Value);
+
+            return Ok();
+        }
+
+        [Authorize]
         [HttpPost("saveAnswers/{testSessionId:int}/{finish:bool}")]
         public async Task<ActionResult> SaveAnswers(List<UserAnswersDto> dto, [FromRoute] int testSessionId, bool finish)
         {

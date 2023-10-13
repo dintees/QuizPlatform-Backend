@@ -64,5 +64,9 @@ public class MainProfile : Profile
         // Flashcards
         CreateMap<Flashcard, UserFlashcardDto>();
         CreateMap<FlashcardItem, FlashcardItemDto>();
+        CreateMap<Flashcard, FlashcardsSetDto>();
+        CreateMap<FlashcardsSetDto, Flashcard>();
+        CreateMap<FlashcardItemDto, FlashcardItem>();
+        
     }
 }
