@@ -38,6 +38,16 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context.Entry(flashcard).State = EntityState.Modified;
         }
 
+        public void Delete(FlashcardItem item)
+        {
+            _context.Entry(item).State = EntityState.Deleted;
+        }
+
+        public void Delete(Flashcard flashcard)
+        {
+            _context.Entry(flashcard).State = EntityState.Deleted;
+        }
+
         public async Task<bool> SaveAsync()
         {
             foreach (var entityEntry in _context.ChangeTracker.Entries<Entity>())

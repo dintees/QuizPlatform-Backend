@@ -10,4 +10,6 @@ public interface IFlashcardRepository
     void Update(Flashcard flashcard);
     Task<bool> SaveAsync();
     Task<Flashcard?> GetFlashcardsSetByIdAsync(int id);
+    void Delete(FlashcardItem flashcardItem);
+    void Delete(Flashcard flashcard);
 }

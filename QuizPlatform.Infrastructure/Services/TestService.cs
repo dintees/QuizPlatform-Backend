@@ -31,14 +31,16 @@ public class TestService : ITestService
         return _mapper.Map<List<UserTestDto>?>(tests);
     }
 
-    public async Task<TestDto?> GetByIdAsync(int id)
+    public async Task<TestDto?> GetByIdAsync(int id, int userId)
     {
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(id);
         if (test is null) return null;
+        if (test.UserId != userId) return null;
+
         test.Questions = test.Questions.Where(q => !q.IsDeleted).ToList();
 
-        var setDto = _mapper.Map<TestDto>(test);
-        return setDto;
+        var testDto = _mapper.Map<TestDto>(test);
+        return testDto;
     }
 
     public async Task<Result<int>> CreateNewTestAsync(CreateTestDto dto, int userId)
@@ -78,11 +80,14 @@ public class TestService : ITestService
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto)
+    public async Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto, int userId)
     {
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(id, false);
         if (test is null)
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
+
+        if (test.UserId != userId)
+            return new Result<TestDto> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
 
         var validationResult = await _testValidator.ValidateAsync(_mapper.Map<Test>(dto));
         if (!validationResult.IsValid)
@@ -152,6 +157,13 @@ public class TestService : ITestService
         return await _testRepository.SaveAsync() ?
                 new Result<int> { Success = true, Value = newSet.Id } :
                 new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
+    }
+
+    public async Task<List<UserTestDto>?> GetAllPublicTestsListAsync()
+    {
+        var tests = await _testRepository.GetPublicTestsListAsync();
+
+        return _mapper.Map<List<UserTestDto>?>(tests);
     }
 
     public async Task<bool> AddQuestionToTestAsync(int setId, int questionId)

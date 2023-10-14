@@ -52,7 +52,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task GetByIdAsync_ForInvalidSetId_ReturnsNull()
         {
-            var set = await _service.GetByIdAsync(20);
+            var set = await _service.GetByIdAsync(20, TODO);
 
             Assert.Null(set);
         }
@@ -60,7 +60,7 @@ namespace QuizPlatform.Tests
         [Fact]
         public async Task GetByIdAsync_ForValidSetId_ReturnsSetWithQuestionsAndAnswers()
         {
-            var set = await _service.GetByIdAsync(1);
+            var set = await _service.GetByIdAsync(1, TODO);
             var questions = set!.Questions;
 
             Assert.NotNull(set);
@@ -94,7 +94,7 @@ namespace QuizPlatform.Tests
             };
 
             var result = await _service.CreateNewTestAsync(set, 1);
-            var foundSet = await _service.GetByIdAsync(3);
+            var foundSet = await _service.GetByIdAsync(3, TODO);
 
             Assert.True(result.Success);
             Assert.Equal(title, foundSet?.Title);
@@ -106,7 +106,7 @@ namespace QuizPlatform.Tests
             var setOptions = new TestDto { Description = "New description" };
 
             var result = await _service.ModifyTestPropertiesAsync(2, setOptions);
-            var foundSet = await _service.GetByIdAsync(2);
+            var foundSet = await _service.GetByIdAsync(2, TODO);
 
             Assert.False(result.Success);
             Assert.Equal(TestErrorMessages.EmptySetTitle, result.ErrorMessage);
@@ -119,7 +119,7 @@ namespace QuizPlatform.Tests
             var setOptions = new TestDto { Title = "New title", Description = "New description" };
 
             var result = await _service.ModifyTestPropertiesAsync(2, setOptions);
-            var foundSet = await _service.GetByIdAsync(2);
+            var foundSet = await _service.GetByIdAsync(2, TODO);
 
             Assert.True(result.Success);
             Assert.Null(result.ErrorMessage);
@@ -156,7 +156,7 @@ namespace QuizPlatform.Tests
         {
             var result = await _service.AddQuestionToTestAsync(2, 2);
 
-            var questionCount = await _service.GetByIdAsync(2);
+            var questionCount = await _service.GetByIdAsync(2, TODO);
 
             Assert.True(result);
             Assert.Equal(1, questionCount?.Questions?.Count);
@@ -178,7 +178,7 @@ namespace QuizPlatform.Tests
         {
             var result = await _service.RemoveQuestionFromTestAsync(1, 3);
 
-            var questionCount = await _service.GetByIdAsync(1);
+            var questionCount = await _service.GetByIdAsync(1, TODO);
 
             Assert.True(result);
             Assert.Equal(1, questionCount?.Questions?.Count);

@@ -10,11 +10,13 @@ namespace QuizPlatform.Infrastructure.Services
     public class FlashcardService : IFlashcardService
     {
         private readonly IFlashcardRepository _flashcardRepository;
+        private readonly ITestRepository _testRepository;
         private readonly IMapper _mapper;
 
-        public FlashcardService(IFlashcardRepository flashcardRepository, IMapper mapper)
+        public FlashcardService(IFlashcardRepository flashcardRepository, ITestRepository testRepository, IMapper mapper)
         {
             _flashcardRepository = flashcardRepository;
+            _testRepository = testRepository;
             _mapper = mapper;
         }
 
@@ -76,6 +78,45 @@ namespace QuizPlatform.Infrastructure.Services
             _flashcardRepository.Update(flashcardEntity);
 
             return await _flashcardRepository.SaveAsync();
+        }
+
+        public async Task DeleteFlashcardsSetById(int flashcardsSetId)
+        {
+            var flashcardsSet = await _flashcardRepository.GetFlashcardsSetByIdAsync(flashcardsSetId);
+            if (flashcardsSet is null)
+                return;
+
+            _flashcardRepository.Delete(flashcardsSet);
+            await _flashcardRepository.SaveAsync();
+        }
+
+        public async Task<int?> GenerateFlashcardsSetFromTest(int testId, int userId)
+        {
+            var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId);
+            if (test is null)
+                return null;
+
+            var flashcards = new Flashcard
+            {
+                Title = string.Concat(test.Title, " - Flashcards"),
+                Description = test.Description,
+                UserId = userId,
+                FlashcardItems = new List<FlashcardItem>()
+            };
+
+            foreach (var question in test.Questions)
+            {
+                if (question.Answers != null)
+                    flashcards.FlashcardItems.Add(new FlashcardItem
+                    {
+                        FirstSide = question.Content,
+                        SecondSide = string.Join(", ", question.Answers.Where(e => e.Correct).Select(e => e.Content))
+                    });
+            }
+
+            await _flashcardRepository.AddAsync(flashcards);
+
+            return await _flashcardRepository.SaveAsync() ? flashcards.Id : null;
         }
     }
 }

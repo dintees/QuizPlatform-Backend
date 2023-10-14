@@ -10,5 +10,6 @@ namespace QuizPlatform.Infrastructure.Interfaces
         Task AddAsync(Test test);
         void Update(Test test);
         Task<bool> SaveAsync();
+        Task<List<Test>?> GetPublicTestsListAsync();
     }
 }
