@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuizPlatform.Infrastructure.ErrorMessages;
@@ -93,7 +92,7 @@ public class UserController : ControllerBase
         if (userId is null)
             return BadRequest();
 
-        var result= await _userService.ChangeUserPropertiesAsync(userId.Value, dto);
+        var result = await _userService.ChangeUserPropertiesAsync(userId.Value, dto);
         if (result is null) return Ok();
         return BadRequest(result);
     }
@@ -113,5 +112,37 @@ public class UserController : ControllerBase
 
         if (changePasswordResult is null) return Ok();
         return BadRequest(changePasswordResult);
+    }
+
+    [Authorize]
+    [HttpGet("getUserSessions")]
+    public async Task<ActionResult> GetUserSessions()
+    {
+        var userId = _userContextService.UserId;
+        if (userId == null) return Unauthorized();
+
+        var result = await _userService.GetUserSessionsAsync(userId.Value);
+
+        return result != null ? Ok(result) : BadRequest();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("getAllUsers")]
+    public async Task<ActionResult> GetAllUsers()
+    {
+        var result = await _userService.GetAllUsersAsync();
+        return result != null ? Ok(result) : BadRequest();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("delete/{userId:int}")]
+    public async Task<ActionResult> DeleteUser(int userId)
+    {
+        var loggedInUserId = _userContextService.UserId;
+        if (loggedInUserId == null) return Unauthorized();
+        if (loggedInUserId == userId) return BadRequest();
+
+        await _userService.DeleteUserByIdAsync(userId);
+        return Ok();
     }
 }

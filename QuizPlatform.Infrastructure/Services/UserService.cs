@@ -185,6 +185,27 @@ public class UserService : IUserService
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
+    public async Task<List<UserSessionDto>?> GetUserSessionsAsync(int userId)
+    {
+        var userSessions = await _loggingService.GetUserSessionsList(userId);
+        return userSessions;
+    }
+
+    public async Task<List<UserDto>?> GetAllUsersAsync()
+    {
+        var allUsers = await _userRepository.GetAllUsersAsync();
+        return _mapper.Map<List<UserDto>>(allUsers);
+    }
+
+    public async Task DeleteUserByIdAsync(int userId)
+    {
+        var user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null) return;
+        user.IsDeleted = true;
+        _userRepository.UpdateUser(user);
+        await _userRepository.SaveAsync();
+    }
+
     public async Task<string?> ChangePasswordAsync(int id, ChangeUserPasswordDto user)
     {
         var foundUser = await _userRepository.GetUserByIdAsync(id);

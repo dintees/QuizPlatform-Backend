@@ -22,21 +22,21 @@ namespace QuizPlatform.Infrastructure.Repositories
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-            return await _context.Users
+            return await _context.Users.Where(e => !e.IsDeleted)
                 .Include(e => e.Role)
                 .FirstOrDefaultAsync(e => e.Email == email);
         }
 
         public async Task<User?> GetUserAsync(string username, string email)
         {
-            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(e => e.UserName == username || e.Email == email);
+            return await _context.Users.AsNoTracking().Where(e => !e.IsDeleted).FirstOrDefaultAsync(e => e.UserName == username || e.Email == email);
         }
 
         public async Task<User?> GetUserByIdAsync(int id, bool readOnly = true)
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-            return await _context.Users.FirstOrDefaultAsync(e => e.Id == id);
+            return await _context.Users.Where(e => !e.IsDeleted).FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public void UpdateUser(User user)
@@ -60,6 +60,11 @@ namespace QuizPlatform.Infrastructure.Repositories
                 entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
             }
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<User>?> GetAllUsersAsync()
+        {
+            return await _context.Users.Where(e => !e.IsDeleted).Include(e => e.Role).ToListAsync();
         }
     }
 }

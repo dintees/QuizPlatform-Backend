@@ -14,8 +14,12 @@ public class MainProfile : Profile
     {
         // User
         CreateMap<UserRegisterDto, User>();
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDto>()
+            .ForMember(m => m.Role, o => o.MapFrom(s => s.Role!.Name));
         CreateMap<ForgotPasswordDto, ChangeUserPasswordDto>();
+
+        // User sessions
+        CreateMap<UserSession, UserSessionDto>();
 
         // Question
         CreateMap<CreateQuestionDto, Question>()

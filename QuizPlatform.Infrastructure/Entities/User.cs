@@ -10,4 +10,5 @@ public class User : Entity
     public bool AccountConfirmed { get; set; }
     public Role? Role { get; set; }
     public int RoleId { get; set; }
+    public bool IsDeleted { get; set; }
 }
