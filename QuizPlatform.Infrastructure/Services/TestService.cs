@@ -96,6 +96,9 @@ public class TestService : ITestService
         test.Title = dto.Title;
         test.Description = dto.Description;
         test.IsPublic = dto.IsPublic;
+        test.ShuffleQuestions = dto.ShuffleQuestions;
+        test.ShuffleAnswers = dto.ShuffleAnswers;
+        test.OneQuestionMode = dto.OneQuestionMode;
 
         var questionsEntity = test.Questions;
 

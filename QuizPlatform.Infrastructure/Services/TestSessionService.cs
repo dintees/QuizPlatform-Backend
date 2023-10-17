@@ -7,19 +7,20 @@ using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models.TestSession;
 using QuizPlatform.Infrastructure.Models;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks.Dataflow;
 
 namespace QuizPlatform.Infrastructure.Services
 {
     public class TestSessionService : ITestSessionService
     {
         private readonly ITestSessionRepository _testSessionRepository;
+        private readonly ITestRepository _testRepository;
         private readonly IUserAnswersRepository _userAnswersRepository;
         private readonly IMapper _mapper;
 
-        public TestSessionService(ITestSessionRepository testSessionRepository, IUserAnswersRepository userAnswersRepository, IMapper mapper)
+        public TestSessionService(ITestSessionRepository testSessionRepository, ITestRepository testRepository, IUserAnswersRepository userAnswersRepository, IMapper mapper)
         {
             _testSessionRepository = testSessionRepository;
+            _testRepository = testRepository;
             _userAnswersRepository = userAnswersRepository;
             _mapper = mapper;
         }
@@ -27,6 +28,17 @@ namespace QuizPlatform.Infrastructure.Services
         public async Task<Result<int>> CreateTestSession(CreateTestSessionDto dto, int userId)
         {
             var testSession = _mapper.Map<TestSession>(dto);
+            if (dto.UseDefaultTestOptions)
+            {
+                var test = await _testRepository.GetByIdAsync(dto.TestId);
+                if (test is not null)
+                {
+                    testSession.ShuffleQuestions = test.ShuffleQuestions;
+                    testSession.ShuffleAnswers = test.ShuffleAnswers;
+                    testSession.OneQuestionMode = test.OneQuestionMode;
+                }
+            }
+
             testSession.UserId = userId;
 
             await _testSessionRepository.AddAsync(testSession);
