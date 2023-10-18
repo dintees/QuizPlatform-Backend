@@ -91,7 +91,8 @@ public class TestService : ITestService
 
         var validationResult = await _testValidator.ValidateAsync(_mapper.Map<Test>(dto));
         if (!validationResult.IsValid)
-            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.ValidationError };
+        //return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         test.Title = dto.Title;
         test.Description = dto.Description;
@@ -217,7 +218,8 @@ public class TestService : ITestService
         var validationResult = await _testValidator.ValidateAsync(test);
 
         if (!validationResult.IsValid)
-            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.ValidationError };
+            //return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         await _testRepository.AddAsync(test);
         var created = await _testRepository.SaveAsync();
