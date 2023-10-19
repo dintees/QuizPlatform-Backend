@@ -19,7 +19,8 @@ public class MainProfile : Profile
         CreateMap<ForgotPasswordDto, ChangeUserPasswordDto>();
 
         // User sessions
-        CreateMap<UserSession, UserSessionDto>();
+        CreateMap<UserSession, UserSessionDto>()
+            .ForMember(m => m.Username, o => o.MapFrom(s => s.User!.UserName));
 
         // Question
         CreateMap<CreateQuestionDto, Question>()

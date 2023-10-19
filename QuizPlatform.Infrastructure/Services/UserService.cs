@@ -185,9 +185,9 @@ public class UserService : IUserService
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
-    public async Task<List<UserSessionDto>?> GetUserSessionsAsync(int userId)
+    public async Task<List<UserSessionDto>?> GetUserSessionsAsync(string? username)
     {
-        var userSessions = await _loggingService.GetUserSessionsList(userId);
+        var userSessions = await _loggingService.GetUserSessionsList(username);
         return userSessions;
     }
 

@@ -114,14 +114,11 @@ public class UserController : ControllerBase
         return BadRequest(changePasswordResult);
     }
 
-    [Authorize]
-    [HttpGet("getUserSessions")]
-    public async Task<ActionResult> GetUserSessions()
+    [Authorize(Roles = "Admin")]
+    [HttpGet("getUserSessions/{username?}")]
+    public async Task<ActionResult> GetUserSessions(string? username)
     {
-        var userId = _userContextService.UserId;
-        if (userId == null) return Unauthorized();
-
-        var result = await _userService.GetUserSessionsAsync(userId.Value);
+        var result = await _userService.GetUserSessionsAsync(username);
 
         return result != null ? Ok(result) : BadRequest();
     }

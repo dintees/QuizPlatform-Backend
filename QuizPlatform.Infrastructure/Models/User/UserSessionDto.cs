@@ -5,5 +5,6 @@
         public DateTime LoggedInTime { get; set; }
         public string? IPAddress { get; set; }
         public string? Browser { get; set; }
+        public string? Username { get; set; }
     }
 }

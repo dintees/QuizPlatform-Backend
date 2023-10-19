@@ -38,9 +38,10 @@ public class LoggingService : ILoggingService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<UserSessionDto>?> GetUserSessionsList(int userId)
+    public async Task<List<UserSessionDto>?> GetUserSessionsList(string? username)
     {
-        var userSessionsList = await _context.UserSessions.Where(e => e.UserId == userId).ToListAsync();
-        return _mapper.Map<List<UserSessionDto>>(userSessionsList);
+        if (username is null)
+            return _mapper.Map<List<UserSessionDto>>(await _context.UserSessions.Include(e => e.User).OrderByDescending(e => e.LoggedInTime).ToListAsync());
+        return _mapper.Map<List<UserSessionDto>>(await _context.UserSessions.Include(e => e.User).Where(e => e.User!.UserName == username).OrderByDescending(e => e.LoggedInTime).ToListAsync());
     }
 }
