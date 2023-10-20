@@ -61,7 +61,7 @@ namespace QuizPlatform.Infrastructure.Repositories
 
         public async Task<List<Test>?> GetPublicTestsListAsync()
         {
-            return await _context.Tests.Include(e => e.User).Where(e => e.IsPublic).ToListAsync();
+            return await _context.Tests.Include(e => e.User).Where(e => e.IsPublic && !e.IsDeleted).ToListAsync();
         }
     }
 }
