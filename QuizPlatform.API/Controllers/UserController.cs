@@ -142,4 +142,11 @@ public class UserController : ControllerBase
         await _userService.DeleteUserByIdAsync(userId);
         return Ok();
     }
+
+    [Authorize]
+    [HttpGet("jwtVerify")]
+    public ActionResult JwtVerify()
+    {
+        return Ok();
+    }
 }

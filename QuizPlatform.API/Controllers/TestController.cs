@@ -25,7 +25,7 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
 
         if (userId is null) return BadRequest();
-        var userTests = await _testService.GetAllUserTests(userId.Value);
+        var userTests = await _testService.GetAllUserTestsAsync(userId.Value);
 
         return Ok(userTests);
     }
@@ -39,6 +39,15 @@ public class TestController : ControllerBase
         return publicTests != null ? Ok(publicTests) : BadRequest();
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpGet("getALlUserTests")]
+    public async Task<ActionResult> GetAllUserTestsForAdmin()
+    {
+        var allUserTests = await _testService.GetAllUserTestsAsync(null);
+
+        return allUserTests != null ? Ok(allUserTests) : BadRequest();
+    }
+
     [Authorize]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TestDto?>> GetByIdAsync(int id)
@@ -46,7 +55,9 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var test = await _testService.GetByIdAsync(id, userId.Value);
+        var isAdmin = _userContextService.RoleName == "Admin";
+
+        var test = await _testService.GetByIdAsync(id, isAdmin ? null : userId.Value);
         if (test is null) return NotFound();
         return Ok(test);
     }
@@ -92,7 +103,9 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await _testService.ModifyTestAsync(id, testDto, userId.Value);
+        var isAdmin = _userContextService.RoleName == "Admin";
+
+        var result = await _testService.ModifyTestAsync(id, testDto, isAdmin ? null : userId.Value);
         if (result.Success) return Ok(result);
         return BadRequest(result);
     }

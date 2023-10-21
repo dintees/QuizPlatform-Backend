@@ -30,8 +30,13 @@ namespace QuizPlatform.Infrastructure.Repositories
             return await _context.Tests.FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public async Task<List<Test>?> GetTestsByUserIdAsync(int userId)
+        public async Task<List<Test>?> GetTestsByUserIdAsync(int? userId)
         {
+            // for admin - list all users
+            if (userId is null)
+                return await _context.Tests.Include(e => e.User).Where(e => !e.IsDeleted).ToListAsync();
+
+            // for single user -> via user id
             return await _context.Tests.Include(e => e.User).Where(e => e.UserId == userId && !e.IsDeleted).ToListAsync();
         }
 

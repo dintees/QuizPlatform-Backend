@@ -134,7 +134,7 @@ namespace QuizPlatform.Tests
             const int userId = 5;
 
             // Act
-            var result = await _service.GetAllUserTests(userId);
+            var result = await _service.GetAllUserTestsAsync(userId);
 
             // Assert
             Assert.Equal(2, result?.Count);
