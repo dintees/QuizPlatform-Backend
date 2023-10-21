@@ -11,5 +11,6 @@ namespace QuizPlatform.Infrastructure.Interfaces
         void DeleteUser(User user);
         void UpdateUser(User user);
         Task<bool> SaveAsync();
+        Task<List<User>?> GetAllUsersAsync();
     }
 }

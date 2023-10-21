@@ -14,4 +14,7 @@ public interface IUserService
     Task<string?> GenerateCodeForNewPasswordAsync(string dtoEmail);
     Task<string?> CheckPasswordCodeValidityAsync(string email, string code);
     Task<string?> ResetPasswordAsync(ForgotPasswordDto dto);
+    Task<List<UserSessionDto>?> GetUserSessionsAsync(string? username);
+    Task<List<UserDto>?> GetAllUsersAsync();
+    Task DeleteUserByIdAsync(int userId);
 }

@@ -14,8 +14,13 @@ public class MainProfile : Profile
     {
         // User
         CreateMap<UserRegisterDto, User>();
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDto>()
+            .ForMember(m => m.Role, o => o.MapFrom(s => s.Role!.Name));
         CreateMap<ForgotPasswordDto, ChangeUserPasswordDto>();
+
+        // User sessions
+        CreateMap<UserSession, UserSessionDto>()
+            .ForMember(m => m.Username, o => o.MapFrom(s => s.User!.UserName));
 
         // Question
         CreateMap<CreateQuestionDto, Question>()
@@ -64,5 +69,9 @@ public class MainProfile : Profile
         // Flashcards
         CreateMap<Flashcard, UserFlashcardDto>();
         CreateMap<FlashcardItem, FlashcardItemDto>();
+        CreateMap<Flashcard, FlashcardsSetDto>();
+        CreateMap<FlashcardsSetDto, Flashcard>();
+        CreateMap<FlashcardItemDto, FlashcardItem>();
+        
     }
 }

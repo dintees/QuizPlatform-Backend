@@ -24,21 +24,27 @@ public class TestService : ITestService
         _testValidator = testValidator;
     }
 
-    public async Task<List<UserTestDto>?> GetAllUserTests(int userId)
+    public async Task<List<UserTestDto>?> GetAllUserTestsAsync(int? userId)
     {
-        var tests = await _testRepository.GetTestsByUserIdAsync(userId);
-
-        return _mapper.Map<List<UserTestDto>?>(tests);
+        if (userId is null)
+        {
+            // all users - for admin
+            return _mapper.Map<List<UserTestDto>?>(await _testRepository.GetTestsByUserIdAsync(null));
+        }
+        // for single user
+        return _mapper.Map<List<UserTestDto>?>(await _testRepository.GetTestsByUserIdAsync(userId.Value));
     }
 
-    public async Task<TestDto?> GetByIdAsync(int id)
+    public async Task<TestDto?> GetByIdAsync(int id, int? userId)
     {
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(id);
         if (test is null) return null;
+        if (userId is not null && test.UserId != userId) return null;
+
         test.Questions = test.Questions.Where(q => !q.IsDeleted).ToList();
 
-        var setDto = _mapper.Map<TestDto>(test);
-        return setDto;
+        var testDto = _mapper.Map<TestDto>(test);
+        return testDto;
     }
 
     public async Task<Result<int>> CreateNewTestAsync(CreateTestDto dto, int userId)
@@ -78,19 +84,27 @@ public class TestService : ITestService
             : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto)
+    public async Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto, int? userId)
     {
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(id, false);
         if (test is null)
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
+        // If userId is null -> admin access. Otherwise only author can modify the test
+        if (userId is not null && test.UserId != userId)
+            return new Result<TestDto> { Success = false, ErrorMessage = GeneralErrorMessages.Unauthorized };
+
         var validationResult = await _testValidator.ValidateAsync(_mapper.Map<Test>(dto));
         if (!validationResult.IsValid)
-            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.ValidationError };
+        //return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         test.Title = dto.Title;
         test.Description = dto.Description;
         test.IsPublic = dto.IsPublic;
+        test.ShuffleQuestions = dto.ShuffleQuestions;
+        test.ShuffleAnswers = dto.ShuffleAnswers;
+        test.OneQuestionMode = dto.OneQuestionMode;
 
         var questionsEntity = test.Questions;
 
@@ -145,13 +159,23 @@ public class TestService : ITestService
             Title = string.Concat(test.Title, " - Copy"),
             Description = test.Description,
             Questions = test.Questions.Select(q => new Question { Content = q.Content, MathMode = q.MathMode, QuestionType = q.QuestionType, Answers = q.Answers?.Select(a => new QuestionAnswer { Content = a.Content, Correct = a.Correct }).ToList() }).ToList(),
-            UserId = userId
+            UserId = userId,
+            ShuffleQuestions = test.ShuffleQuestions,
+            ShuffleAnswers = test.ShuffleAnswers,
+            OneQuestionMode = test.OneQuestionMode,
         };
 
         await _testRepository.AddAsync(newSet);
         return await _testRepository.SaveAsync() ?
                 new Result<int> { Success = true, Value = newSet.Id } :
                 new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
+    }
+
+    public async Task<List<UserTestDto>?> GetAllPublicTestsListAsync()
+    {
+        var tests = await _testRepository.GetPublicTestsListAsync();
+
+        return _mapper.Map<List<UserTestDto>?>(tests);
     }
 
     public async Task<bool> AddQuestionToTestAsync(int setId, int questionId)
@@ -202,7 +226,8 @@ public class TestService : ITestService
         var validationResult = await _testValidator.ValidateAsync(test);
 
         if (!validationResult.IsValid)
-            return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
+            return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.ValidationError };
+        //return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
         await _testRepository.AddAsync(test);
         var created = await _testRepository.SaveAsync();

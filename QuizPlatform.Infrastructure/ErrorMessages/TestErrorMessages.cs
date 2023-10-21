@@ -2,6 +2,7 @@
 {
     public static class TestErrorMessages
     {
+        public const string ValidationError = "At least one of the questions was incorrectly created.";
         public const string NotFound = "There is no set with the given id.";
         public const string EmptySetTitle = "Title could not be empty.";
     }

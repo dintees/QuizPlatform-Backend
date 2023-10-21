@@ -7,5 +7,8 @@ public class TestDto
     public string? Title { get; set; }
     public string? Description { get; set; }
     public bool IsPublic { get; set; }
+    public bool ShuffleQuestions { get; set; }
+    public bool ShuffleAnswers { get; set; }
+    public bool OneQuestionMode { get; set; }
     public List<QuestionDto>? Questions { get; set; }
 }
