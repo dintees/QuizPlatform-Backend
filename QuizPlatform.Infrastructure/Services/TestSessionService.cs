@@ -205,8 +205,13 @@ namespace QuizPlatform.Infrastructure.Services
         public async Task<bool> SaveOneUserAnswersAsync(UserAnswersDto dto, int testSessionId, bool finish, int userId)
         {
             if (dto.ShortAnswerValue is null)
-                foreach (var userSingleAnswer in dto.AnswerIds!)
-                    await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+            {
+                if (dto.AnswerIds?.Count == 0)
+                    await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = null, TestSessionId = testSessionId });
+                else
+                    foreach (var userSingleAnswer in dto.AnswerIds!)
+                        await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+            }
             else
                 await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, ShortAnswerValue = dto.ShortAnswerValue, TestSessionId = testSessionId });
 

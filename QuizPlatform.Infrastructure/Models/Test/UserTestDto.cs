@@ -6,5 +6,6 @@
         public string? Title { get; set; }
         public DateTime TsUpdate { get; set; }
         public string? Author { get; set; }
+        public bool IsPublic { get; set; }
     }
 }
