@@ -215,13 +215,35 @@ namespace QuizPlatform.Infrastructure.Services
             else
                 await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, ShortAnswerValue = dto.ShortAnswerValue, TestSessionId = testSessionId });
 
+            await _userAnswersRepository.SaveAsync();
+
             if (finish)
             {
-                var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
-                if (testSession != null)
-                    testSession.IsCompleted = true;
-            }
+                var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
+                var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
 
+                var userAnswersDto = new List<UserAnswersDto>();
+
+                if (userAnswers is not null)
+                {
+                    foreach (var userAnswer in userAnswers)
+                    {
+                        var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
+                        if (found is null)
+                            userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
+                        else
+                            found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    }
+                }
+
+                if (testSession is null)
+                    return false;
+
+                testSession.IsCompleted = true;
+                int score = GetScoreResult(userAnswersDto, testSession);
+                testSession.Score = score;
+                testSession.MaxScore = userAnswersDto.Count;
+            }
             return await _testSessionRepository.SaveAsync();
         }
 
