@@ -76,7 +76,7 @@ public class UserController : ControllerBase
         if (userId is null)
             return Unauthorized();
 
-        var userResult = await _userService.GetUserProfileInformation(userId.Value);
+        var userResult = await _userService.GetUserProfileInformationAsync(userId.Value);
 
         if (userResult is null)
             return BadRequest();

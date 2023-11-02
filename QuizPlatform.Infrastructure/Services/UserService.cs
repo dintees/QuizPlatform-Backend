@@ -43,7 +43,7 @@ public class UserService : IUserService
     public async Task<Result<string>> LoginAndGenerateJwtTokenAsync(UserLoginDto dto)
     {
         var user = await _userRepository.GetUserByEmailAsync(dto.Email!);
-        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return new Result<string> { Success = false, ErrorMessage = UserLoginErrorMessages.BadUserNameOrPassword };
+        if (user is null || user.IsDeleted || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password)) return new Result<string> { Success = false, ErrorMessage = UserLoginErrorMessages.BadUserNameOrPassword };
 
         if (user.AccountConfirmed == false)
             return new Result<string>
@@ -133,7 +133,7 @@ public class UserService : IUserService
         return await _userRepository.SaveAsync() ? null : GeneralErrorMessages.GeneralError;
     }
 
-    public async Task<UserDto?> GetUserProfileInformation(int userId)
+    public async Task<UserDto?> GetUserProfileInformationAsync(int userId)
     {
         var user = await _userRepository.GetUserByIdAsync(userId);
 

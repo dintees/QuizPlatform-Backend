@@ -5,6 +5,7 @@ using QuizPlatform.API.Validation;
 using QuizPlatform.Infrastructure.Authentication;
 using QuizPlatform.Infrastructure.Builders;
 using QuizPlatform.Infrastructure.Entities;
+using QuizPlatform.Infrastructure.Enums;
 using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
@@ -16,7 +17,7 @@ namespace QuizPlatform.Tests
 {
     public class UserTests
     {
-        private readonly IUserService _service;
+        private readonly IUserService _userService;
 
         public UserTests()
         {
@@ -40,7 +41,11 @@ namespace QuizPlatform.Tests
 
             IValidator<UserRegisterDto> userRegisterValidator = new UserRegisterValidator();
             IValidator<ChangeUserPasswordDto> changeUserPasswordValidator = new ChangeUserPasswordValidator();
-            var userTokenRepository = new Mock<IUserTokenRepository>();
+
+            var userTokenRepositoryMock = new Mock<IUserTokenRepository>();
+            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(It.IsAny<int>(), UserTokenType.Registration)).ReturnsAsync((int id, UserTokenType userTokenType) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "123456", UserId = 5, UserTokenType = UserTokenType.Registration });
+            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(2, UserTokenType.PasswordReminder)).ReturnsAsync((int id, UserTokenType userTokenType) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "654321", UserId = 2, UserTokenType = UserTokenType.PasswordReminder });
+            userTokenRepositoryMock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
 
             var emailConfiguration = new EmailConfiguration
             {
@@ -55,7 +60,7 @@ namespace QuizPlatform.Tests
             var emailBuilder = new Mock<EmailBuilder>(emailConfiguration);
             var emailService = new Mock<IEmailService>();
 
-            _service = new UserService(authenticationSettings, mapper, loggingService.Object, userRepositoryMock.Object, userTokenRepository.Object, emailBuilder.Object, emailService.Object, userRegisterValidator, changeUserPasswordValidator);
+            _userService = new UserService(authenticationSettings, mapper, loggingService.Object, userRepositoryMock.Object, userTokenRepositoryMock.Object, emailBuilder.Object, emailService.Object, userRegisterValidator, changeUserPasswordValidator);
         }
 
         [Theory]
@@ -67,7 +72,7 @@ namespace QuizPlatform.Tests
             var user = new UserLoginDto { Email = email, Password = password };
 
             // Act
-            var login = await _service.LoginAndGenerateJwtTokenAsync(user);
+            var login = await _userService.LoginAndGenerateJwtTokenAsync(user);
 
             // Assert
             Assert.IsType<Result<string>>(login);
@@ -82,7 +87,7 @@ namespace QuizPlatform.Tests
             var user = new UserLoginDto { Email = "b@b.pl", Password = "bbbbbbbb" };
 
             // Act
-            var login = await _service.LoginAndGenerateJwtTokenAsync(user);
+            var login = await _userService.LoginAndGenerateJwtTokenAsync(user);
 
             // Assert
             Assert.IsType<Result<string>>(login);
@@ -97,7 +102,7 @@ namespace QuizPlatform.Tests
             var user = new UserLoginDto { Email = "d@d.pl", Password = "dddddddd" };
 
             // Act
-            var login = await _service.LoginAndGenerateJwtTokenAsync(user);
+            var login = await _userService.LoginAndGenerateJwtTokenAsync(user);
 
             // Assert
             Assert.IsType<Result<string>>(login);
@@ -112,7 +117,7 @@ namespace QuizPlatform.Tests
             var user = new UserLoginDto { Email = "a@a.pl", Password = "aaaaaaaa" };
 
             // Act
-            var login = await _service.LoginAndGenerateJwtTokenAsync(user);
+            var login = await _userService.LoginAndGenerateJwtTokenAsync(user);
 
             // Assert
             Assert.IsType<Result<string>>(login);
@@ -123,16 +128,18 @@ namespace QuizPlatform.Tests
 
 
         [Theory]
-        [InlineData("test", null, "12345678", "12345678", 1, UserErrorMessages.EmptyEmail)]
-        [InlineData(null, "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyUserName)]
-        [InlineData("test", "test@test.pl", null, null, 1, UserErrorMessages.EmptyPassword)]
-        public async Task RegisterUserAsync_ForEmptyFields_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
+        [InlineData("", "Test", "Testowy", "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyUserName)]
+        [InlineData("test", "", "Testowy", "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyFirstName)]
+        [InlineData("test", "Test", "", "test@test.pl", "12345678", "12345678", 1, UserErrorMessages.EmptyLastName)]
+        [InlineData("test", "Test", "Testowy", null, "12345678", "12345678", 1, UserErrorMessages.EmptyEmail)]
+        [InlineData("test", "Test", "Testowy", "test@test.pl", null, null, 1, UserErrorMessages.EmptyPassword)]
+        public async Task RegisterUserAsync_ForEmptyFields_ReturnsProperErrorMessage(string username, string firstname, string lastname, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
             // Arrange
-            var user = new UserRegisterDto { UserName = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
+            var user = new UserRegisterDto { UserName = username, FirstName = firstname, LastName = lastname, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
             // Act
-            var register = await _service.RegisterUserAsync(user);
+            var register = await _userService.RegisterUserAsync(user);
 
             // Assert
             Assert.Equal(expectedResult, register);
@@ -140,17 +147,17 @@ namespace QuizPlatform.Tests
 
 
         [Theory]
-        [InlineData("test", "test.pl", "12345678", "12345678", 1, UserErrorMessages.WrongEmailFormat)]
-        [InlineData("test", "test@test.pl", "1234", "1234", 1, UserErrorMessages.TooShortPassword)]
-        [InlineData("test", "test@test.pl", "12345678", "1234567890", 1, UserErrorMessages.NotTheSamePasswords)]
-        [InlineData("AdamAbacki", "a@a.pl", "12345678", "12345678", 1, UserErrorMessages.UserAlreadyExistsError)]
-        public async Task RegisterUserAsync_ForIncorrectValues_ReturnsProperErrorMessage(string username, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
+        [InlineData("test", "Test", "Test", "test.pl", "12345678", "12345678", 1, UserErrorMessages.WrongEmailFormat)]
+        [InlineData("test", "Test", "Test", "test@test.pl", "1234", "1234", 1, UserErrorMessages.TooShortPassword)]
+        [InlineData("test", "Test", "Test", "test@test.pl", "12345678", "1234567890", 1, UserErrorMessages.NotTheSamePasswords)]
+        [InlineData("AdamAbacki", "Test", "Test", "a@a.pl", "12345678", "12345678", 1, UserErrorMessages.UserAlreadyExistsError)]
+        public async Task RegisterUserAsync_ForIncorrectValues_ReturnsProperErrorMessage(string username, string firstname, string lastname, string email, string password, string passwordConfirmation, int roleId, string expectedResult)
         {
             // Arrange
-            var user = new UserRegisterDto { UserName = username, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
+            var user = new UserRegisterDto { UserName = username, FirstName = firstname, LastName = lastname, Email = email, Password = password, PasswordConfirmation = passwordConfirmation, RoleId = roleId };
 
             // Act
-            var register = await _service.RegisterUserAsync(user);
+            var register = await _userService.RegisterUserAsync(user);
 
             // Assert
             Assert.Equal(expectedResult, register);
@@ -161,11 +168,11 @@ namespace QuizPlatform.Tests
         public async Task RegisterUserAsync_ForTheSameUsernameAndPassword_ReturnsTrueAndRegisterUser()
         {
             // Arrange
-            var user = new UserRegisterDto { UserName = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
+            var user = new UserRegisterDto { UserName = "Test", FirstName = "Test", LastName = "Test", Email = "test@test.pl", Password = "aaaaaaaa", PasswordConfirmation = "aaaaaaaa", RoleId = 1 };
 
             // Act
-            var register = await _service.RegisterUserAsync(user);
-            var registerConfirmation = await _service.RegisterUserAsync(user);
+            var register = await _userService.RegisterUserAsync(user);
+            var registerConfirmation = await _userService.RegisterUserAsync(user);
 
             // Assert
             Assert.Null(register);
@@ -184,24 +191,162 @@ namespace QuizPlatform.Tests
             var changeUserPassword = new ChangeUserPasswordDto { OldPassword = oldPassword, NewPassword = newPassword, NewPasswordConfirmation = newPasswordConfirmation };
 
             // Act
-            var changePassword = await _service.ChangePasswordAsync(id, changeUserPassword);
+            var changePassword = await _userService.ChangePasswordAsync(id, changeUserPassword);
 
             // Assert
             Assert.Equal(expectedResult, changePassword);
         }
 
         [Fact]
+        public async Task ConfirmAccountAsync_ForIncorrectCode_ReturnsFalse()
+        {
+            // Arrange
+            var email = "e@e.pl";
+            var code = "123455";
+            var userLoginDto = new UserLoginDto { Email = email, Password = "eeeeeeee" };
+
+            // Act
+            var result = await _userService.ConfirmAccountAsync(email, code);
+            var loginResult = await _userService.LoginAndGenerateJwtTokenAsync(userLoginDto);
+
+            // Assert
+            Assert.False(result);
+            Assert.False(loginResult.Success);
+            Assert.Equal(UserLoginErrorMessages.AccountHasNotBeenConfirmed, loginResult.ErrorMessage!);
+        }
+
+        [Fact]
+        public async Task ConfirmAccountAsync_ForCorrectCode_ReturnsTrue()
+        {
+            // Arrange
+            var email = "e@e.pl";
+            var code = "123456";
+            var userLoginDto = new UserLoginDto { Email = email, Password = "eeeeeeee" };
+
+            // Act
+            var result = await _userService.ConfirmAccountAsync(email, code);
+            var loginResult = await _userService.LoginAndGenerateJwtTokenAsync(userLoginDto);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(loginResult.Success);
+        }
+
+        [Fact]
+        public async Task ChangeUserPropertiesAsync_ForInvalidUserId_ReturnsProperErrorMessage()
+        {
+            // Arrange
+            var accountProperties = new ChangeUserPropertiesDto { FirstName = "Adam", LastName = "Malysz" };
+
+            // Act
+            var result = await _userService.ChangeUserPropertiesAsync(100, accountProperties);
+
+            // Assert
+            Assert.Equal(UserErrorMessages.PersonWithThisIdDoesNotExist, result);
+        }
+
+        [Fact]
+        public async Task ChangeUserPropertiesAsync_ForValidUserId_ReturnsNullAndChangeProperties()
+        {
+            // Arrange
+            var accountProperties = new ChangeUserPropertiesDto { FirstName = "Adam", LastName = "Malysz" };
+
+            // Act
+            var result = await _userService.ChangeUserPropertiesAsync(4, accountProperties);
+            var profileInformation = await _userService.GetUserProfileInformationAsync(4);
+
+            // Assert
+            Assert.Null(result);
+            Assert.Equal("Adam", profileInformation?.Firstname);
+            Assert.Equal("Malysz", profileInformation?.Lastname);
+        }
+
+        [Fact]
+        public async Task GetUserProfileInformation_ForGivenUserId_ReturnsUserDtoWithUserProfileInformation()
+        {
+            // Arrange
+            const int userId = 1;
+
+            // Act
+            var result = await _userService.GetUserProfileInformationAsync(userId);
+
+            // Assert
+            Assert.Equal("Adam", result?.Firstname);
+            Assert.Equal("Abacki", result?.Lastname);
+            Assert.Equal("AdamAbacki", result?.Username);
+            Assert.Equal("a@a.pl", result?.Email);
+        }
+
+        [Fact]
+        public async Task GenerateCodeForNewPasswordAsync_ForUserWithGivenEmail()
+        {
+            // Arrange
+            const string email = "e@e.pl";
+
+            // Act
+            var result = await _userService.GenerateCodeForNewPasswordAsync(email);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckPasswordCodeValidityAsync_ForIncorrectCode_ReturnsProperErrorMessage()
+        {
+            // Arrange
+            const string email = "b@b.pl";
+
+            // Act
+            var result = await _userService.CheckPasswordCodeValidityAsync(email, "012321");
+
+            // Assert
+            Assert.Equal(UserTokenErrorMessages.IncorrectCode, result);
+        }
+
+        [Fact]
+        public async Task CheckPasswordCodeValidityAsync_ForCodeWhichNotExists_ReturnsNotFoundMessage()
+        {
+            // Arrange
+            const string email = "c@c.pl";
+
+            // Act
+            var result = await _userService.CheckPasswordCodeValidityAsync(email, "654321");
+
+            // Assert
+            Assert.Equal(GeneralErrorMessages.NotFound, result);
+        }
+
+        [Fact]
+        public async Task CheckPasswordCodeValidityAsync_ForCorrectCode_ReturnsNull()
+        {
+            // Arrange
+            const string email = "b@b.pl";
+
+            // Act
+            var result = await _userService.CheckPasswordCodeValidityAsync(email, "654321");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+
+
+
+        [Fact]
         public async Task ChangePassword_ForProperValues_ReturnsNullAndChangePassword()
         {
-            var changeuserPassword = new ChangeUserPasswordDto { OldPassword = "cccccccc", NewPassword = "dddddddd", NewPasswordConfirmation = "dddddddd" };
+            // Arrange
+            var changeUserPassword = new ChangeUserPasswordDto { OldPassword = "cccccccc", NewPassword = "dddddddd", NewPasswordConfirmation = "dddddddd" };
 
-            var changePassword = await _service.ChangePasswordAsync(3, changeuserPassword);
-            var incorrectLogin = await _service.LoginAndGenerateJwtTokenAsync(new UserLoginDto { Email = "c@c.pl", Password = "cccccccc" });
-            var correctLogin = await _service.LoginAndGenerateJwtTokenAsync(new UserLoginDto { Email = "c@c.pl", Password = "dddddddd" });
+            // Act
+            var changePassword = await _userService.ChangePasswordAsync(3, changeUserPassword);
+            var incorrectLogin = await _userService.LoginAndGenerateJwtTokenAsync(new UserLoginDto { Email = "c@c.pl", Password = "cccccccc" });
+            var correctLogin = await _userService.LoginAndGenerateJwtTokenAsync(new UserLoginDto { Email = "c@c.pl", Password = "dddddddd" });
 
+            // Assert
             Assert.Null(changePassword);
-            Assert.Null(incorrectLogin);
-            Assert.NotNull(correctLogin);
+            Assert.False(incorrectLogin.Success);
+            Assert.True(correctLogin.Success);
         }
 
 
@@ -212,7 +357,8 @@ namespace QuizPlatform.Tests
                 new User {Id = 1, Email = "a@a.pl", UserName = "AdamAbacki", FirstName = "Adam", LastName = "Abacki", Password = HashPassword("aaaaaaaa"), AccountConfirmed = true, Role = new Role { Id = 1, Name = "Admin"}, IsDeleted = false },
                 new User {Id = 2, Email = "b@b.pl", UserName = "BartoszBabacki", FirstName = "Bartosz", LastName = "Babacki", Password = HashPassword("bbbbbbbb"), AccountConfirmed = false, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
                 new User {Id = 3, Email = "c@c.pl", UserName = "CezaryCadacki", FirstName = "Cezary", LastName = "Cadacki", Password = HashPassword("cccccccc"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
-                new User {Id = 4, Email = "d@dpl", UserName = "DariuszDadacki", FirstName = "Dariusz", LastName = "Dadacki", Password = HashPassword("dddddddd"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = true },
+                new User {Id = 4, Email = "d@d.pl", UserName = "DariuszDadacki", FirstName = "Dariusz", LastName = "Dadacki", Password = HashPassword("dddddddd"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = true },
+                new User {Id = 5, Email = "e@e.pl", UserName = "EdwardEdacki", FirstName = "Edward", LastName = "Edacki", Password = HashPassword("eeeeeeee"), AccountConfirmed = false, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
             };
             return users;
         }
