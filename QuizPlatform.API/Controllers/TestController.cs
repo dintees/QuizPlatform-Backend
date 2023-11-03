@@ -37,8 +37,9 @@ public class TestController : ControllerBase
         var userId = _userContextService.UserId;
         if (userId is null) return Unauthorized();
 
+        var result = await _testService.GetAllUserTestsWithQuestionsContentAsync(userId.Value);
 
-        return Ok();
+        return result is not null ? Ok(result) : BadRequest();
     }
 
     [Authorize]

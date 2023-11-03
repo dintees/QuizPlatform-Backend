@@ -16,4 +16,5 @@ public interface ITestService
     Task<Result<TestDto>> ModifyTestAsync(int testId, TestDto dto, int? userId);
     Task<Result<int>> DuplicateTestAsync(int setId, int userId);
     Task<List<UserTestDto>?> GetAllPublicTestsListAsync();
+    Task<List<TestDto>?> GetAllUserTestsWithQuestionsContentAsync(int userId);
 }

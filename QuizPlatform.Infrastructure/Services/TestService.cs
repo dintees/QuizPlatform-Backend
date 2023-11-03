@@ -7,7 +7,6 @@ using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
 using QuizPlatform.Infrastructure.Models.Test;
 using QuizPlatform.Infrastructure.Models.TestSession;
-using QuizPlatform.Infrastructure.Repositories;
 
 namespace QuizPlatform.Infrastructure.Services;
 
@@ -151,24 +150,27 @@ public class TestService : ITestService
 
         // Update score results for existing tests in the database
         var connectedTestSessions = await _testSessionRepository.GetByTestIdAsync(testId, true);
-        foreach (var testSession in connectedTestSessions)
+        if (connectedTestSessions is not null)
         {
-            var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSession.Id);
-
-            var userAnswersDto = new List<UserAnswersDto>();
-            if (userAnswers is not null)
+            foreach (var testSession in connectedTestSessions)
             {
-                foreach (var userAnswer in userAnswers)
+                var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSession.Id);
+
+                var userAnswersDto = new List<UserAnswersDto>();
+                if (userAnswers is not null)
                 {
-                    var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
-                    if (found is null)
-                        userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
-                    else
-                        found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    foreach (var userAnswer in userAnswers)
+                    {
+                        var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
+                        if (found is null)
+                            userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
+                        else
+                            found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    }
                 }
+                int score = TestSessionService.GetScoreResult(userAnswersDto, testSession);
+                testSession.Score = score;
             }
-            int score = TestSessionService.GetScoreResult(userAnswersDto, testSession);
-            testSession.Score = score;
         }
 
         var modified = await _testRepository.SaveAsync();
@@ -205,9 +207,21 @@ public class TestService : ITestService
         return _mapper.Map<List<UserTestDto>?>(tests);
     }
 
-    public Task<List<UserTestsWithQuestionsDto>?> GetAllUserTestsWithQuestionsContentAsync(int userId)
+    public async Task<List<TestDto>?> GetAllUserTestsWithQuestionsContentAsync(int userId)
     {
-        throw new NotImplementedException();
+        var userTests = await _testRepository.GetTestsByUserIdAsync(userId, true);
+        if (userTests is null) return null;
+
+
+        var tests = new List<TestDto>();
+
+        foreach (var test in userTests.Select(userTest => _mapper.Map<TestDto>(userTest)))
+        {
+            test.Questions = test.Questions?.Where(e => !e.IsDeleted).ToList();
+            tests.Add(test);
+        }
+
+        return tests;
     }
 
     public async Task<bool> AddQuestionToTestAsync(int setId, int questionId)
