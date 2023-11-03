@@ -94,7 +94,7 @@ namespace QuizPlatform.Infrastructure.Services
                     }
                 }
 
-                score = GetScoreResult(userAnswersDto, testSession);
+                score = GetScoreResult(userAnswersDto, testSession!);
                 foreach (var correctAnswer in correctAnswers)
                 {
                     correctAnswer.IsCorrect = userAnswersDto.Find(e => e.QuestionId == correctAnswer.QuestionId)?.IsCorrect ?? false;
@@ -103,7 +103,7 @@ namespace QuizPlatform.Infrastructure.Services
 
 
             // Shuffle questions and answers
-            var questions = testSession.IsCompleted ? userEntityQuestions.OrderBy(e => e.Id).ToList() : testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
+            var questions = testSession!.IsCompleted ? userEntityQuestions.OrderBy(e => e.Id).ToList() : testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
             if (testSession.Test?.Questions is not null)
             {
                 if (testSession.IsCompleted == false && testSession.ShuffleQuestions)
@@ -247,6 +247,27 @@ namespace QuizPlatform.Infrastructure.Services
             return await _testSessionRepository.SaveAsync();
         }
 
+        public async Task<Dictionary<string, UserStatisticsDto>> GetStatisticsForUserAsync(int userId)
+        {
+            var userTestSessions = await _testSessionRepository.GetByUserIdWithTestAsync(userId);
+            var data = new Dictionary<string, UserStatisticsDto>();
+
+            var startDate = DateTime.Now.AddDays(-14).Date;
+            var endDate = DateTime.Now.Date;
+
+            for (var day = startDate; day <= endDate; day = day.AddDays(1))
+            {
+                var dayTests = userTestSessions.Where(e => e.IsCompleted && e.TsUpdate.Date == day && e.MaxScore != 0).ToList();
+                data[day.ToString("yyyy-MM-dd")] = new UserStatisticsDto
+                {
+                    Average = dayTests.Select(e => ((double)e.Score / e.MaxScore) * 100.0).DefaultIfEmpty().Average(),
+                    NumberOfSolvedTests = dayTests.Count,
+                };
+            }
+
+            return data;
+        }
+
         private static List<UserAnswersDto> GetCorrectAnswers(TestSession testSession)
         {
             List<UserAnswersDto> correctAnswers = new();
@@ -270,7 +291,7 @@ namespace QuizPlatform.Infrastructure.Services
             return correctAnswers;
         }
 
-        private static int GetScoreResult(List<UserAnswersDto> userAnswersList, TestSession testSession)
+        public static int GetScoreResult(List<UserAnswersDto> userAnswersList, TestSession testSession)
         {
             int score = 0;
             var correctAnswers = GetCorrectAnswers(testSession);

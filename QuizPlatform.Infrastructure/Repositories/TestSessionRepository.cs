@@ -20,11 +20,17 @@ namespace QuizPlatform.Infrastructure.Repositories
             return await _context.TestSessions.FirstOrDefaultAsync(e => e.Id == testSessionId);
         }
 
-        public async Task<List<TestSession>> GetByUserIdWithTestAsync(int userId, bool sort = false)
+        public async Task<List<TestSession>> GetByUserIdWithTestAsync(int userId, bool sortByModificationTime = false)
         {
-            if (sort)
+            if (sortByModificationTime)
                 return await _context.TestSessions.Include(e => e.Test).Where(e => e.UserId == userId).OrderBy(e => e.IsCompleted).ThenByDescending(e => e.TsUpdate).ToListAsync();
             return await _context.TestSessions.Include(e => e.Test).Where(e => e.UserId == userId).ToListAsync();
+        }
+        public async Task<List<TestSession>?> GetByTestIdAsync(int testId, bool includeTest = false)
+        {
+            if (includeTest)
+                return await _context.TestSessions.Include(e => e.Test).ThenInclude(t => t!.Questions).ThenInclude(q => q.Answers).Where(e => e.TestId == testId).ToListAsync();
+            return await _context.TestSessions.Where(e => e.TestId == testId).ToListAsync();
         }
 
         public async Task AddAsync(TestSession testSession)

@@ -58,7 +58,9 @@ namespace QuizPlatform.Infrastructure.Repositories
 
                 if (entityEntry.State == EntityState.Added)
                     entityEntry.Property(e => e.TsInsert).CurrentValue = now;
-                entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
+
+                if (entityEntry.Entity.GetType() != typeof(TestSession))
+                    entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
             }
 
             return await _context.SaveChangesAsync() > 0;

@@ -84,5 +84,18 @@ namespace QuizPlatform.API.Controllers
 
             return Ok();
         }
+
+        [Authorize]
+        [HttpGet("getStatisticsForUser")]
+        public async Task<ActionResult> GetStatisticsForUser()
+        {
+            var userId = _userContextService.UserId;
+            if (userId is null)
+                return Unauthorized();
+
+            var result = await _testSessionService.GetStatisticsForUserAsync(userId.Value);
+
+            return Ok(result);
+        }
     }
 }
