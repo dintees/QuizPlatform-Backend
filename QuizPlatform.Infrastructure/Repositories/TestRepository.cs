@@ -13,15 +13,18 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Test?> GetTestWithQuestionsByIdAsync(int id, bool readOnly = true)
+        public async Task<Test?> GetTestWithQuestionsByIdAsync(int id, bool readOnly = true, bool includeDeleted = false)
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-            var set = await _context.Tests.AsSplitQuery()
-            .Include(e => e.Questions.Where(q => !q.IsDeleted))!.ThenInclude(e => e!.Answers)
-            .FirstOrDefaultAsync(s => s.Id == id);
+            if (includeDeleted)
+                return await _context.Tests.AsSplitQuery()
+                .Include(e => e.Questions).ThenInclude(e => e!.Answers)
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            return set;
+            return await _context.Tests.AsSplitQuery()
+                .Include(e => e.Questions.Where(q => !q.IsDeleted))!.ThenInclude(e => e!.Answers)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<Test?> GetByIdAsync(int id, bool readOnly = true)

@@ -305,7 +305,7 @@ namespace QuizPlatform.Infrastructure.Services
                     var userAnswer = Regex.Replace(userAnswers.ShortAnswerValue, @"\s+", " ").Trim().ToLower();
                     userAnswer = ConvertFractions(userAnswer);
 
-                    if (correctShortAnswersArr is not null && correctShortAnswersArr.Any(e => e.ToLower() == userAnswer))
+                    if (correctShortAnswersArr is not null && correctShortAnswersArr.Any(e => CompareStrings(e.ToLower(), userAnswer)))
                     {
                         userAnswers.IsCorrect = true;
                         score++;
@@ -337,6 +337,13 @@ namespace QuizPlatform.Infrastructure.Services
             });
 
             return output;
+        }
+
+        private static bool CompareStrings(string str1, string str2)
+        {
+            if (double.TryParse(str1, CultureInfo.InvariantCulture, out double num1) && double.TryParse(str2, CultureInfo.InvariantCulture, out double num2))
+                return Math.Abs(num1 - num2) < double.Epsilon;
+            return str1.Equals(str2);
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)

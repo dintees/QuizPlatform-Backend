@@ -43,8 +43,8 @@ namespace QuizPlatform.Tests
             IValidator<ChangeUserPasswordDto> changeUserPasswordValidator = new ChangeUserPasswordValidator();
 
             var userTokenRepositoryMock = new Mock<IUserTokenRepository>();
-            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(It.IsAny<int>(), UserTokenType.Registration)).ReturnsAsync((int id, UserTokenType userTokenType) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "123456", UserId = 5, UserTokenType = UserTokenType.Registration });
-            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(2, UserTokenType.PasswordReminder)).ReturnsAsync((int id, UserTokenType userTokenType) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "654321", UserId = 2, UserTokenType = UserTokenType.PasswordReminder });
+            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(It.IsAny<int>(), UserTokenType.Registration)).ReturnsAsync((int _, UserTokenType _) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "123456", UserId = 5, UserTokenType = UserTokenType.Registration });
+            userTokenRepositoryMock.Setup(x => x.GetByUserIdAndTypeAsync(2, UserTokenType.PasswordReminder)).ReturnsAsync((int _, UserTokenType _) => new UserToken { ExpirationTime = DateTime.Now.AddMinutes(1), Token = "654321", UserId = 2, UserTokenType = UserTokenType.PasswordReminder });
             userTokenRepositoryMock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
 
             var emailConfiguration = new EmailConfiguration
@@ -329,6 +329,39 @@ namespace QuizPlatform.Tests
             Assert.Null(result);
         }
 
+        [Fact]
+        public async Task ResetPasswordAsync_ForInvalidData_ReturnsProperErrorMessage()
+        {
+            // Arrange
+            var data = new ForgotPasswordDto { Email = "e@e.pl", NewPassword = "ee", NewPasswordConfirmation = "ee" };
+
+            // Act
+            var result = await _userService.ResetPasswordAsync(data);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(UserErrorMessages.TooShortPassword, result);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_ForValidData_ChangePasswordAndReturnsNull()
+        {
+            // Arrange
+            var data = new ForgotPasswordDto { Email = "f@f.pl", NewPassword = "qqqqqqqq", NewPasswordConfirmation = "qqqqqqqq" };
+            var badCredentials = new UserLoginDto { Email = "f@f.pl", Password = "ffffffff" };
+            var correctCredentials = new UserLoginDto { Email = "f@f.pl", Password = "qqqqqqqq" };
+
+            // Act
+            var result = await _userService.ResetPasswordAsync(data);
+            var badLogin = await _userService.LoginAndGenerateJwtTokenAsync(badCredentials);
+            var correctLogin = await _userService.LoginAndGenerateJwtTokenAsync(correctCredentials);
+
+            // Assert
+            Assert.Null(result);
+            Assert.False(badLogin.Success);
+            Assert.True(correctLogin.Success);
+        }
+
 
 
 
@@ -359,6 +392,7 @@ namespace QuizPlatform.Tests
                 new User {Id = 3, Email = "c@c.pl", UserName = "CezaryCadacki", FirstName = "Cezary", LastName = "Cadacki", Password = HashPassword("cccccccc"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
                 new User {Id = 4, Email = "d@d.pl", UserName = "DariuszDadacki", FirstName = "Dariusz", LastName = "Dadacki", Password = HashPassword("dddddddd"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = true },
                 new User {Id = 5, Email = "e@e.pl", UserName = "EdwardEdacki", FirstName = "Edward", LastName = "Edacki", Password = HashPassword("eeeeeeee"), AccountConfirmed = false, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
+                new User {Id = 5, Email = "f@f.pl", UserName = "FabianFadacki", FirstName = "Fabian", LastName = "Fadacki", Password = HashPassword("ffffffff"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
             };
             return users;
         }
@@ -366,8 +400,8 @@ namespace QuizPlatform.Tests
         private Mock<IUserRepository> GetUserRepositoryMock(List<User> users)
         {
             var userRepositoryMock = new Mock<IUserRepository>();
-            userRepositoryMock.Setup(x => x.GetUserByEmailAsync(It.IsAny<string>(), It.IsAny<bool>())).Returns((string email, bool readOnly) => Task.FromResult(users.FirstOrDefault(e => e.Email == email)));
-            userRepositoryMock.Setup(x => x.GetUserByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool readOnly) => Task.FromResult(users.FirstOrDefault(e => e.Id == id)));
+            userRepositoryMock.Setup(x => x.GetUserByEmailAsync(It.IsAny<string>(), It.IsAny<bool>())).Returns((string email, bool _) => Task.FromResult(users.FirstOrDefault(e => e.Email == email)));
+            userRepositoryMock.Setup(x => x.GetUserByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool _) => Task.FromResult(users.FirstOrDefault(e => e.Id == id)));
             userRepositoryMock.Setup(x => x.GetUserAsync(It.IsAny<string>(), It.IsAny<string>())).Returns((string username, string email) => Task.FromResult(users.FirstOrDefault(e => e.UserName == username || e.Email == email)));
             userRepositoryMock.Setup(x => x.AddNewUserAsync(It.IsAny<User>())).Returns((User user) => { users.Add(user); return Task.CompletedTask; });
             userRepositoryMock.Setup(x => x.SaveAsync()).Returns(Task.FromResult(true));
