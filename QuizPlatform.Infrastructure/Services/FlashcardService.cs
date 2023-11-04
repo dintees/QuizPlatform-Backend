@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.Identity.Client;
 using QuizPlatform.Infrastructure.Entities;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
@@ -29,14 +28,14 @@ namespace QuizPlatform.Infrastructure.Services
             return new Result<List<UserFlashcardDto>> { Success = true, Value = flashcardListDto };
         }
 
-        public async Task<FlashcardsSetDto?> GetFlashcardItemsById(int flashcardsId)
+        public async Task<FlashcardsSetDto?> GetFlashcardItemsByIdAsync(int flashcardsId)
         {
             var flashcards = await _flashcardRepository.GetFlashcardsSetByIdAsync(flashcardsId);
 
             return flashcards == null ? null : _mapper.Map<FlashcardsSetDto>(flashcards);
         }
 
-        public async Task<int?> CreateNewFlashcardsSet(FlashcardsSetDto dto, int userId)
+        public async Task<int?> CreateNewFlashcardsSetAsync(FlashcardsSetDto dto, int userId)
         {
             var flashcardEntity = _mapper.Map<Flashcard>(dto);
             flashcardEntity.UserId = userId;
@@ -48,7 +47,7 @@ namespace QuizPlatform.Infrastructure.Services
             return isCreated ? flashcardEntity.Id : null;
         }
 
-        public async Task<bool> ModifyFlashcardsSet(FlashcardsSetDto dto, int id, int userId)
+        public async Task<bool> ModifyFlashcardsSetAsync(FlashcardsSetDto dto, int id, int userId)
         {
             var flashcardEntity = await _flashcardRepository.GetFlashcardsSetByIdAsync(id);
             if (flashcardEntity == null || flashcardEntity.FlashcardItems == null) return false;
@@ -80,7 +79,7 @@ namespace QuizPlatform.Infrastructure.Services
             return await _flashcardRepository.SaveAsync();
         }
 
-        public async Task DeleteFlashcardsSetById(int flashcardsSetId)
+        public async Task DeleteFlashcardsSetByIdAsync(int flashcardsSetId)
         {
             var flashcardsSet = await _flashcardRepository.GetFlashcardsSetByIdAsync(flashcardsSetId);
             if (flashcardsSet is null)
@@ -90,7 +89,7 @@ namespace QuizPlatform.Infrastructure.Services
             await _flashcardRepository.SaveAsync();
         }
 
-        public async Task<int?> GenerateFlashcardsSetFromTest(int testId, int userId)
+        public async Task<int?> GenerateFlashcardsSetFromTestAsync(int testId, int userId)
         {
             var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId);
             if (test is null)

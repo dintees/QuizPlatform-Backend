@@ -35,6 +35,15 @@ namespace QuizPlatform.Tests
             var mapper = mapperConfiguration.CreateMapper();
 
             var loggingService = new Mock<ILoggingService>();
+            loggingService.Setup(x => x.GetUserSessionsList(It.IsAny<string>())).ReturnsAsync((string username) =>
+                new List<UserSessionDto>
+                {
+                    new UserSessionDto
+                    {
+                        Username = username, Browser = "browser", IPAddress = "76.45.132.11",
+                        LoggedInTime = DateTime.Now.AddMinutes(-45)
+                    }
+                });
 
             var users = GetUsers();
             var userRepositoryMock = GetUserRepositoryMock(users);
@@ -362,8 +371,48 @@ namespace QuizPlatform.Tests
             Assert.True(correctLogin.Success);
         }
 
+        [Fact]
+        public async Task GetUserSessionsAsync_ForGiverUsername_ReturnsListOfUserSessions()
+        {
+            // Arrange
+            var username = "AdamAbacki";
 
+            // Act
+            var userSessions = await _userService.GetUserSessionsAsync(username);
 
+            // Assert
+            Assert.IsType<List<UserSessionDto>>(userSessions);
+        }
+
+        [Fact]
+        public async Task GetAllUsersAsync_ReturnsListOfUsers()
+        {
+            // Arrange
+
+            // Act
+            var result = await _userService.GetAllUsersAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(7, result.Count);
+        }
+
+        [Fact]
+        public async Task DeleteUserByIdAsync_ForGivenUserId_SetIsDeletedPropertyToTrue()
+        {
+            // Arrange
+            var userId = 7;
+            var email = "g@g.pl";
+            var password = "gggggggg";
+
+                // Act
+            await _userService.DeleteUserByIdAsync(userId);
+            var loginResult = await _userService.LoginAndGenerateJwtTokenAsync(new UserLoginDto
+                { Email = email, Password = password });
+
+            // Assert
+            Assert.False(loginResult.Success);
+        }
 
         [Fact]
         public async Task ChangePassword_ForProperValues_ReturnsNullAndChangePassword()
@@ -382,7 +431,6 @@ namespace QuizPlatform.Tests
             Assert.True(correctLogin.Success);
         }
 
-
         private List<User> GetUsers()
         {
             var users = new List<User>
@@ -392,7 +440,8 @@ namespace QuizPlatform.Tests
                 new User {Id = 3, Email = "c@c.pl", UserName = "CezaryCadacki", FirstName = "Cezary", LastName = "Cadacki", Password = HashPassword("cccccccc"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
                 new User {Id = 4, Email = "d@d.pl", UserName = "DariuszDadacki", FirstName = "Dariusz", LastName = "Dadacki", Password = HashPassword("dddddddd"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = true },
                 new User {Id = 5, Email = "e@e.pl", UserName = "EdwardEdacki", FirstName = "Edward", LastName = "Edacki", Password = HashPassword("eeeeeeee"), AccountConfirmed = false, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
-                new User {Id = 5, Email = "f@f.pl", UserName = "FabianFadacki", FirstName = "Fabian", LastName = "Fadacki", Password = HashPassword("ffffffff"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
+                new User {Id = 6, Email = "f@f.pl", UserName = "FabianFadacki", FirstName = "Fabian", LastName = "Fadacki", Password = HashPassword("ffffffff"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
+                new User {Id = 7, Email = "g@g.pl", UserName = "GracjanGadacki", FirstName = "Gracjan", LastName = "Gadacki", Password = HashPassword("gggggggg"), AccountConfirmed = true, Role = new Role { Id = 2, Name = "User"}, IsDeleted = false },
             };
             return users;
         }
@@ -404,6 +453,7 @@ namespace QuizPlatform.Tests
             userRepositoryMock.Setup(x => x.GetUserByIdAsync(It.IsAny<int>(), It.IsAny<bool>())).Returns((int id, bool _) => Task.FromResult(users.FirstOrDefault(e => e.Id == id)));
             userRepositoryMock.Setup(x => x.GetUserAsync(It.IsAny<string>(), It.IsAny<string>())).Returns((string username, string email) => Task.FromResult(users.FirstOrDefault(e => e.UserName == username || e.Email == email)));
             userRepositoryMock.Setup(x => x.AddNewUserAsync(It.IsAny<User>())).Returns((User user) => { users.Add(user); return Task.CompletedTask; });
+            userRepositoryMock.Setup(x => x.GetAllUsersAsync()).ReturnsAsync(() => users);
             userRepositoryMock.Setup(x => x.SaveAsync()).Returns(Task.FromResult(true));
             return userRepositoryMock;
         }

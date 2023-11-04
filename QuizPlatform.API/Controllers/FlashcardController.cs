@@ -36,7 +36,7 @@ namespace QuizPlatform.API.Controllers
         [HttpGet("get/{flashcardSetId:int}")]
         public async Task<ActionResult> GetFlashcardsBySetId(int flashcardSetId)
         {
-            var result = await _flashcardService.GetFlashcardItemsById(flashcardSetId);
+            var result = await _flashcardService.GetFlashcardItemsByIdAsync(flashcardSetId);
             return result is null ? NotFound() : Ok(result);
         }
 
@@ -48,7 +48,7 @@ namespace QuizPlatform.API.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var result = await _flashcardService.CreateNewFlashcardsSet(dto, userId.Value);
+            var result = await _flashcardService.CreateNewFlashcardsSetAsync(dto, userId.Value);
 
             return result is not null ? Ok(result) : BadRequest();
         }
@@ -61,7 +61,7 @@ namespace QuizPlatform.API.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var result = await _flashcardService.GenerateFlashcardsSetFromTest(testId, userId.Value);
+            var result = await _flashcardService.GenerateFlashcardsSetFromTestAsync(testId, userId.Value);
 
             return result != null ? Ok(result) : BadRequest();
         }
@@ -74,7 +74,7 @@ namespace QuizPlatform.API.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var result = await _flashcardService.ModifyFlashcardsSet(dto, id, userId.Value);
+            var result = await _flashcardService.ModifyFlashcardsSetAsync(dto, id, userId.Value);
 
             return result ? Ok() : BadRequest();
         }
@@ -83,7 +83,7 @@ namespace QuizPlatform.API.Controllers
         [HttpDelete("delete/{flashcardsSetId}")]
         public async Task<ActionResult> DeleteFlashcardsSetById(int flashcardsSetId)
         {
-            await _flashcardService.DeleteFlashcardsSetById(flashcardsSetId);
+            await _flashcardService.DeleteFlashcardsSetByIdAsync(flashcardsSetId);
             return Ok();
         }
     }
