@@ -51,7 +51,7 @@ namespace QuizPlatform.API.Controllers
             if (userId is null)
                 return Unauthorized();
 
-            var result = await _testSessionService.CreateTestSession(dto, userId.Value);
+            var result = await _testSessionService.CreateTestSessionAsync(dto, userId.Value);
 
             if (result.Success)
                 return Ok(result.Value);

@@ -25,7 +25,7 @@ namespace QuizPlatform.Infrastructure.Services
             _mapper = mapper;
         }
 
-        public async Task<Result<int>> CreateTestSession(CreateTestSessionDto dto, int userId)
+        public async Task<Result<int>> CreateTestSessionAsync(CreateTestSessionDto dto, int userId)
         {
             var testSession = _mapper.Map<TestSession>(dto);
             if (dto.UseDefaultTestOptions)
