@@ -66,29 +66,6 @@ public class TestService : ITestService
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<int>> ModifyTestPropertiesAsync(int id, TestDto testDto)
-    {
-        var test = _mapper.Map<Test>(testDto);
-        if (test is null)
-            return new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
-        var validationResult = await _testValidator.ValidateAsync(test);
-        if (!validationResult.IsValid)
-            return new Result<int>
-            { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
-
-        var testEntity = await _testRepository.GetByIdAsync(id);
-        if (testEntity is null)
-            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
-
-        testEntity.Title = test.Title;
-        testEntity.Description = test.Description;
-
-        _testRepository.Update(testEntity);
-        return await _testRepository.SaveAsync()
-            ? new Result<int> { Success = true, Value = testEntity.Id }
-            : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
-    }
-
     public async Task<Result<TestDto>> ModifyTestAsync(int testId, TestDto dto, int? userId)
     {
         var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId, false, true);
@@ -184,9 +161,9 @@ public class TestService : ITestService
         return modified ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(test) } : new Result<TestDto> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<int>> DuplicateTestAsync(int setId, int userId)
+    public async Task<Result<int>> DuplicateTestAsync(int testId, int userId)
     {
-        var test = await _testRepository.GetTestWithQuestionsByIdAsync(setId);
+        var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId);
         if (test is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
@@ -218,7 +195,6 @@ public class TestService : ITestService
     {
         var userTests = await _testRepository.GetTestsByUserIdAsync(userId, true);
         if (userTests is null) return null;
-
 
         var tests = new List<TestDto>();
 

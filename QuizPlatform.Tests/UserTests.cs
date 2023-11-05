@@ -405,10 +405,10 @@ namespace QuizPlatform.Tests
             var email = "g@g.pl";
             var password = "gggggggg";
 
-                // Act
+            // Act
             await _userService.DeleteUserByIdAsync(userId);
             var loginResult = await _userService.LoginAndGenerateJwtTokenAsync(new UserLoginDto
-                { Email = email, Password = password });
+            { Email = email, Password = password });
 
             // Assert
             Assert.False(loginResult.Success);
