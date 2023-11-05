@@ -63,7 +63,8 @@ public class MainProfile : Profile
         CreateMap<CreateTestSessionDto, TestSession>();
         CreateMap<Test, TestSessionDto>();
         CreateMap<TestSession, UserTestSessionDto>()
-            .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title));
+            .ForMember(m => m.TestName, o => o.MapFrom(s => s.Test!.Title))
+            .ForMember(m => m.PercentageScore, o => o.MapFrom(s => s.MaxScore != 0 ? (((double)s.Score / s.MaxScore) * 100.0) : -1));
 
 
         // Flashcards

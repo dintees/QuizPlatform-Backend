@@ -133,7 +133,7 @@ namespace QuizPlatform.Tests
             {
                 Question = "Question",
                 QuestionType = QuestionType.ShortAnswer,
-                Answers = new List<CreateAnswerDto> { new CreateAnswerDto { Answer = "test", Correct = false } }
+                Answers = new List<CreateAnswerDto>()
             };
 
             var result = await _service.CreateQuestionAsync(question);

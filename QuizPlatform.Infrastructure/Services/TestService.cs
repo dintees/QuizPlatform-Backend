@@ -6,6 +6,7 @@ using QuizPlatform.Infrastructure.ErrorMessages;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Models;
 using QuizPlatform.Infrastructure.Models.Test;
+using QuizPlatform.Infrastructure.Models.TestSession;
 
 namespace QuizPlatform.Infrastructure.Services;
 
@@ -14,13 +15,17 @@ public class TestService : ITestService
     private readonly IMapper _mapper;
     private readonly ITestRepository _testRepository;
     private readonly IQuestionRepository _questionRepository;
+    private readonly ITestSessionRepository _testSessionRepository;
+    private readonly IUserAnswersRepository _userAnswersRepository;
     private readonly IValidator<Test> _testValidator;
 
-    public TestService(IMapper mapper, ITestRepository testRepository, IQuestionRepository questionRepository, IValidator<Test> testValidator)
+    public TestService(IMapper mapper, ITestRepository testRepository, IQuestionRepository questionRepository, ITestSessionRepository testSessionRepository, IUserAnswersRepository userAnswersRepository, IValidator<Test> testValidator)
     {
         _mapper = mapper;
         _testRepository = testRepository;
         _questionRepository = questionRepository;
+        _testSessionRepository = testSessionRepository;
+        _userAnswersRepository = userAnswersRepository;
         _testValidator = testValidator;
     }
 
@@ -61,32 +66,9 @@ public class TestService : ITestService
             : new Result<int>() { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<int>> ModifyTestPropertiesAsync(int id, TestDto testDto)
+    public async Task<Result<TestDto>> ModifyTestAsync(int testId, TestDto dto, int? userId)
     {
-        var test = _mapper.Map<Test>(testDto);
-        if (test is null)
-            return new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
-        var validationResult = await _testValidator.ValidateAsync(test);
-        if (!validationResult.IsValid)
-            return new Result<int>
-            { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
-
-        var testEntity = await _testRepository.GetByIdAsync(id);
-        if (testEntity is null)
-            return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
-
-        testEntity.Title = test.Title;
-        testEntity.Description = test.Description;
-
-        _testRepository.Update(testEntity);
-        return await _testRepository.SaveAsync()
-            ? new Result<int> { Success = true, Value = testEntity.Id }
-            : new Result<int> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
-    }
-
-    public async Task<Result<TestDto>> ModifyTestAsync(int id, TestDto dto, int? userId)
-    {
-        var test = await _testRepository.GetTestWithQuestionsByIdAsync(id, false);
+        var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId, false, true);
         if (test is null)
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
@@ -99,12 +81,16 @@ public class TestService : ITestService
             return new Result<TestDto> { Success = false, ErrorMessage = TestErrorMessages.ValidationError };
         //return new Result<TestDto> { Success = false, ErrorMessage = validationResult.Errors.FirstOrDefault()?.ErrorMessage };
 
+        var deletedQuestions = test.Questions.Where(e => e.IsDeleted);
+
         test.Title = dto.Title;
         test.Description = dto.Description;
         test.IsPublic = dto.IsPublic;
         test.ShuffleQuestions = dto.ShuffleQuestions;
         test.ShuffleAnswers = dto.ShuffleAnswers;
         test.OneQuestionMode = dto.OneQuestionMode;
+
+        test.Questions = test.Questions.Where(e => !e.IsDeleted).ToList();
 
         var questionsEntity = test.Questions;
 
@@ -115,8 +101,8 @@ public class TestService : ITestService
                 if (foundEntity is null)
                 {
                     var newQuestion = _mapper.Map<Question>(question);
-                    newQuestion.TestId = id;
-                    await _questionRepository.InsertQuestionAsync(newQuestion);
+                    newQuestion.TestId = testId;
+                    test.Questions.Add(newQuestion);
                 }
                 else
                 {
@@ -143,14 +129,41 @@ public class TestService : ITestService
                 }
             }
 
+        // Update score results for existing tests in the database
+        var connectedTestSessions = await _testSessionRepository.GetByTestIdAsync(testId);
+        if (connectedTestSessions is not null)
+        {
+            foreach (var testSession in connectedTestSessions)
+            {
+                testSession.Test = test;
+                testSession.Test.Questions = testSession.Test.Questions.Concat(deletedQuestions).ToList();
+                var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSession.Id);
+
+                var userAnswersDto = new List<UserAnswersDto>();
+                if (userAnswers is not null)
+                {
+                    foreach (var userAnswer in userAnswers)
+                    {
+                        var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
+                        if (found is null)
+                            userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
+                        else
+                            found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    }
+                }
+                int score = TestSessionService.GetScoreResult(userAnswersDto, testSession);
+                testSession.Score = score;
+            }
+        }
 
         var modified = await _testRepository.SaveAsync();
+        test.Questions = test.Questions.Where(e => !e.IsDeleted).ToList();
         return modified ? new Result<TestDto> { Success = true, Value = _mapper.Map<TestDto>(test) } : new Result<TestDto> { Success = false, ErrorMessage = GeneralErrorMessages.GeneralError };
     }
 
-    public async Task<Result<int>> DuplicateTestAsync(int setId, int userId)
+    public async Task<Result<int>> DuplicateTestAsync(int testId, int userId)
     {
-        var test = await _testRepository.GetTestWithQuestionsByIdAsync(setId);
+        var test = await _testRepository.GetTestWithQuestionsByIdAsync(testId);
         if (test is null)
             return new Result<int> { Success = false, ErrorMessage = TestErrorMessages.NotFound };
 
@@ -176,6 +189,22 @@ public class TestService : ITestService
         var tests = await _testRepository.GetPublicTestsListAsync();
 
         return _mapper.Map<List<UserTestDto>?>(tests);
+    }
+
+    public async Task<List<TestDto>?> GetAllUserTestsWithQuestionsContentAsync(int userId)
+    {
+        var userTests = await _testRepository.GetTestsByUserIdAsync(userId, true);
+        if (userTests is null) return null;
+
+        var tests = new List<TestDto>();
+
+        foreach (var test in userTests.Select(userTest => _mapper.Map<TestDto>(userTest)))
+        {
+            test.Questions = test.Questions?.Where(e => !e.IsDeleted).ToList();
+            tests.Add(test);
+        }
+
+        return tests;
     }
 
     public async Task<bool> AddQuestionToTestAsync(int setId, int questionId)

@@ -51,7 +51,7 @@ namespace QuizPlatform.API.Controllers
             if (userId is null)
                 return Unauthorized();
 
-            var result = await _testSessionService.CreateTestSession(dto, userId.Value);
+            var result = await _testSessionService.CreateTestSessionAsync(dto, userId.Value);
 
             if (result.Success)
                 return Ok(result.Value);
@@ -83,6 +83,19 @@ namespace QuizPlatform.API.Controllers
             await _testSessionService.SaveUserAnswersAsync(dto, testSessionId, finish, userId.Value);
 
             return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("getStatisticsForUser")]
+        public async Task<ActionResult> GetStatisticsForUser()
+        {
+            var userId = _userContextService.UserId;
+            if (userId is null)
+                return Unauthorized();
+
+            var result = await _testSessionService.GetStatisticsForUserAsync(userId.Value);
+
+            return Ok(result);
         }
     }
 }

@@ -25,7 +25,7 @@ namespace QuizPlatform.Infrastructure.Services
             _mapper = mapper;
         }
 
-        public async Task<Result<int>> CreateTestSession(CreateTestSessionDto dto, int userId)
+        public async Task<Result<int>> CreateTestSessionAsync(CreateTestSessionDto dto, int userId)
         {
             var testSession = _mapper.Map<TestSession>(dto);
             if (dto.UseDefaultTestOptions)
@@ -94,7 +94,7 @@ namespace QuizPlatform.Infrastructure.Services
                     }
                 }
 
-                score = GetScoreResult(userAnswersDto, testSession);
+                score = GetScoreResult(userAnswersDto, testSession!);
                 foreach (var correctAnswer in correctAnswers)
                 {
                     correctAnswer.IsCorrect = userAnswersDto.Find(e => e.QuestionId == correctAnswer.QuestionId)?.IsCorrect ?? false;
@@ -103,7 +103,7 @@ namespace QuizPlatform.Infrastructure.Services
 
 
             // Shuffle questions and answers
-            var questions = testSession.IsCompleted ? userEntityQuestions.OrderBy(e => e.Id).ToList() : testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
+            var questions = testSession!.IsCompleted ? userEntityQuestions.OrderBy(e => e.Id).ToList() : testSession.Test?.Questions.Where(e => !e.IsDeleted).ToList();
             if (testSession.Test?.Questions is not null)
             {
                 if (testSession.IsCompleted == false && testSession.ShuffleQuestions)
@@ -205,19 +205,67 @@ namespace QuizPlatform.Infrastructure.Services
         public async Task<bool> SaveOneUserAnswersAsync(UserAnswersDto dto, int testSessionId, bool finish, int userId)
         {
             if (dto.ShortAnswerValue is null)
-                foreach (var userSingleAnswer in dto.AnswerIds!)
-                    await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+            {
+                if (dto.AnswerIds?.Count == 0)
+                    await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = null, TestSessionId = testSessionId });
+                else
+                    foreach (var userSingleAnswer in dto.AnswerIds!)
+                        await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, QuestionAnswerId = userSingleAnswer, TestSessionId = testSessionId });
+            }
             else
                 await _userAnswersRepository.AddAsync(new UserAnswers { QuestionId = dto.QuestionId, ShortAnswerValue = dto.ShortAnswerValue, TestSessionId = testSessionId });
 
+            await _userAnswersRepository.SaveAsync();
+
             if (finish)
             {
-                var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId);
-                if (testSession != null)
-                    testSession.IsCompleted = true;
+                var testSession = await _testSessionRepository.GetBySessionIdAsync(testSessionId, true);
+                var userAnswers = await _userAnswersRepository.GetUserAnswersByTestSessionIdAsync(testSessionId);
+
+                var userAnswersDto = new List<UserAnswersDto>();
+
+                if (userAnswers is not null)
+                {
+                    foreach (var userAnswer in userAnswers)
+                    {
+                        var found = userAnswersDto.Find(e => e.QuestionId == userAnswer.QuestionId);
+                        if (found is null)
+                            userAnswersDto.Add(new UserAnswersDto { QuestionId = userAnswer.QuestionId, AnswerIds = userAnswer.QuestionAnswerId is null ? null : new List<int> { userAnswer.QuestionAnswerId!.Value }, ShortAnswerValue = userAnswer.ShortAnswerValue });
+                        else
+                            found.AnswerIds?.Add(userAnswer.QuestionAnswerId!.Value);
+                    }
+                }
+
+                if (testSession is null)
+                    return false;
+
+                testSession.IsCompleted = true;
+                int score = GetScoreResult(userAnswersDto, testSession);
+                testSession.Score = score;
+                testSession.MaxScore = userAnswersDto.Count;
+            }
+            return await _testSessionRepository.SaveAsync();
+        }
+
+        public async Task<Dictionary<string, UserStatisticsDto>> GetStatisticsForUserAsync(int userId)
+        {
+            var userTestSessions = await _testSessionRepository.GetByUserIdWithTestAsync(userId);
+            var data = new Dictionary<string, UserStatisticsDto>();
+
+            var startDate = DateTime.Now.AddDays(-14).Date;
+            var endDate = DateTime.Now.Date;
+
+            for (var day = startDate; day <= endDate; day = day.AddDays(1))
+            {
+                var dayTests = userTestSessions.Where(e => e.IsCompleted && e.TsUpdate.Date == day && e.MaxScore != 0).ToList();
+                data[day.ToString("yyyy-MM-dd")] = new UserStatisticsDto
+                {
+                    Average = dayTests.Select(e => ((double)e.Score / e.MaxScore) * 100.0).DefaultIfEmpty().Average(),
+                    NumberOfSolvedTests = dayTests.Count,
+                };
             }
 
-            return await _testSessionRepository.SaveAsync();
+            return data;
         }
 
         private static List<UserAnswersDto> GetCorrectAnswers(TestSession testSession)
@@ -243,7 +291,7 @@ namespace QuizPlatform.Infrastructure.Services
             return correctAnswers;
         }
 
-        private static int GetScoreResult(List<UserAnswersDto> userAnswersList, TestSession testSession)
+        public static int GetScoreResult(List<UserAnswersDto> userAnswersList, TestSession testSession)
         {
             int score = 0;
             var correctAnswers = GetCorrectAnswers(testSession);
@@ -257,7 +305,7 @@ namespace QuizPlatform.Infrastructure.Services
                     var userAnswer = Regex.Replace(userAnswers.ShortAnswerValue, @"\s+", " ").Trim().ToLower();
                     userAnswer = ConvertFractions(userAnswer);
 
-                    if (correctShortAnswersArr is not null && correctShortAnswersArr.Any(e => e.ToLower() == userAnswer))
+                    if (correctShortAnswersArr is not null && correctShortAnswersArr.Any(e => CompareStrings(e.ToLower(), userAnswer)))
                     {
                         userAnswers.IsCorrect = true;
                         score++;
@@ -289,6 +337,13 @@ namespace QuizPlatform.Infrastructure.Services
             });
 
             return output;
+        }
+
+        private static bool CompareStrings(string str1, string str2)
+        {
+            if (double.TryParse(str1, CultureInfo.InvariantCulture, out double num1) && double.TryParse(str2, CultureInfo.InvariantCulture, out double num2))
+                return Math.Abs(num1 - num2) < double.Epsilon;
+            return str1.Equals(str2);
         }
 
         private static void ShuffleArray<T>(ICollection<T>? coll)

@@ -13,15 +13,18 @@ namespace QuizPlatform.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Test?> GetTestWithQuestionsByIdAsync(int id, bool readOnly = true)
+        public async Task<Test?> GetTestWithQuestionsByIdAsync(int id, bool readOnly = true, bool includeDeleted = false)
         {
             if (readOnly) _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-            var set = await _context.Tests.AsSplitQuery()
-            .Include(e => e.Questions.Where(q => !q.IsDeleted))!.ThenInclude(e => e!.Answers)
-            .FirstOrDefaultAsync(s => s.Id == id);
+            if (includeDeleted)
+                return await _context.Tests.AsSplitQuery()
+                .Include(e => e.Questions).ThenInclude(e => e!.Answers)
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            return set;
+            return await _context.Tests.AsSplitQuery()
+                .Include(e => e.Questions.Where(q => !q.IsDeleted))!.ThenInclude(e => e!.Answers)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<Test?> GetByIdAsync(int id, bool readOnly = true)
@@ -30,13 +33,17 @@ namespace QuizPlatform.Infrastructure.Repositories
             return await _context.Tests.FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public async Task<List<Test>?> GetTestsByUserIdAsync(int? userId)
+        public async Task<List<Test>?> GetTestsByUserIdAsync(int? userId, bool includeQuestionsWithAnswers = false)
         {
             // for admin - list all users
             if (userId is null)
                 return await _context.Tests.Include(e => e.User).Where(e => !e.IsDeleted).ToListAsync();
 
             // for single user -> via user id
+            // for importing questions from another tests
+            if (includeQuestionsWithAnswers)
+                return await _context.Tests.Include(e => e.User).Include(e => e.Questions).ThenInclude(e => e.Answers).Where(e => e.UserId == userId && !e.IsDeleted).ToListAsync();
+
             return await _context.Tests.Include(e => e.User).Where(e => e.UserId == userId && !e.IsDeleted).ToListAsync();
         }
 
@@ -58,7 +65,9 @@ namespace QuizPlatform.Infrastructure.Repositories
 
                 if (entityEntry.State == EntityState.Added)
                     entityEntry.Property(e => e.TsInsert).CurrentValue = now;
-                entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
+
+                if (entityEntry.Entity.GetType() != typeof(TestSession))
+                    entityEntry.Property(e => e.TsUpdate).CurrentValue = now;
             }
 
             return await _context.SaveChangesAsync() > 0;

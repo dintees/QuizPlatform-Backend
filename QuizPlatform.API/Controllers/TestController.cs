@@ -24,10 +24,22 @@ public class TestController : ControllerBase
     {
         var userId = _userContextService.UserId;
 
-        if (userId is null) return BadRequest();
+        if (userId is null) return Unauthorized();
         var userTests = await _testService.GetAllUserTestsAsync(userId.Value);
 
         return Ok(userTests);
+    }
+
+    [Authorize]
+    [HttpGet("getAllUserQuestions")]
+    public async Task<ActionResult> GetAllUserQuestions()
+    {
+        var userId = _userContextService.UserId;
+        if (userId is null) return Unauthorized();
+
+        var result = await _testService.GetAllUserTestsWithQuestionsContentAsync(userId.Value);
+
+        return result is not null ? Ok(result) : BadRequest();
     }
 
     [Authorize]
