@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Hosting;
-using QuizPlatform.Infrastructure.Interfaces;
 
 namespace QuizPlatform.Service
 {
@@ -14,7 +13,7 @@ namespace QuizPlatform.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-
+            Console.WriteLine("Service has been started");
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
@@ -23,9 +22,9 @@ namespace QuizPlatform.Service
 
                 if (now.Hour == scheduledTime.Hour)
                 {
-                    Console.WriteLine("Service has been started.");
+                    Console.WriteLine("Starting executing tasks...");
 
-                    await _databaseCleaner.CleanUserTokensEntity();
+                    await _databaseCleaner.CleanUserTokensEntityAsync();
 
                     Console.WriteLine("Completed all tasks successfully.");
                 }

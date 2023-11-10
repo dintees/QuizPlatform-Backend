@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using QuizPlatform.Infrastructure.Interfaces;
 
-namespace EducationPlatform.Infrastructure.Services;
+namespace QuizPlatform.Infrastructure.Services;
 
 public class UserContextService : IUserContextService
 {

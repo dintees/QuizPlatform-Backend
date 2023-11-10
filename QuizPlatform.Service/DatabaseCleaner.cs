@@ -14,7 +14,11 @@ namespace QuizPlatform.Service
             _userRepository = userRepository;
         }
 
-        public async Task CleanUserTokensEntity()
+        /// <summary>
+        /// Cleans all expires tokens for which the validity period has expired from the database
+        /// </summary>
+        /// <returns></returns>
+        public async Task CleanUserTokensEntityAsync()
         {
             var expiredUserTokens = await _userTokenRepository.GetAllAsync(e => e.ExpirationTime < DateTime.Now);
             if (expiredUserTokens == null) return;

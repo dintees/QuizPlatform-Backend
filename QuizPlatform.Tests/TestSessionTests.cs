@@ -23,6 +23,7 @@ namespace QuizPlatform.Tests
 
             var questions = GetQuestions();
             var tests = GetTests(questions);
+            var userAnswers = GetUserAnswers(questions);
             var testSessions = GetTestSessions(tests);
             var testSessionRepositoryMock = GetTestSessionRepositoryMock(testSessions);
 
@@ -31,21 +32,12 @@ namespace QuizPlatform.Tests
 
             var userAnswersRepositoryMock = new Mock<IUserAnswersRepository>();
             userAnswersRepositoryMock.Setup(x => x.GetUserAnswersByTestSessionIdAsync(It.IsAny<int>())).ReturnsAsync(new List<UserAnswers>());
-            userAnswersRepositoryMock.Setup(x => x.GetUserAnswersByTestSessionIdAsync(2)).ReturnsAsync(() =>
-            {
-                return new List<UserAnswers>
-                {
-                    new UserAnswers { Id = 1, QuestionId = 1, Question = questions.FirstOrDefault(e => e.Id == 1), TestSessionId = 2, QuestionAnswerId = 1, QuestionAnswer = new QuestionAnswer { Id = 1, Content = "A", Correct = true }},
-                    new UserAnswers { Id = 2, QuestionId = 2, Question = questions.FirstOrDefault(e => e.Id == 2), TestSessionId = 2, QuestionAnswerId = 2, QuestionAnswer = new QuestionAnswer { Id = 2, Content = "A", Correct = true }},
-                };
-            });
-            userAnswersRepositoryMock.Setup(x => x.GetUserAnswersByTestSessionIdAsync(3)).ReturnsAsync(() =>
-            {
-                return new List<UserAnswers>
-                {
-                    new UserAnswers { Id = 3, QuestionId = 3, Question = questions.FirstOrDefault(e => e.Id == 3), TestSessionId = 3, ShortAnswerValue = "  1 / 2   "},
-                };
-            });
+            userAnswersRepositoryMock.Setup(x => x.AddAsync(It.IsAny<UserAnswers>())).Callback(
+                (UserAnswers answers) => userAnswers.Add(answers));
+
+            userAnswersRepositoryMock.Setup(x => x.GetUserAnswersByTestSessionIdAsync(It.IsAny<int>())).ReturnsAsync((int testSessionId) => userAnswers.Where(e => e.TestSessionId == testSessionId).ToList());
+
+            userAnswersRepositoryMock.Setup(x => x.Delete(It.IsAny<UserAnswers>())).Callback((UserAnswers userAnswersObject) => userAnswers.Remove(userAnswersObject));
 
             _testSessionService = new TestSessionService(testSessionRepositoryMock.Object, testRepositoryMock.Object, userAnswersRepositoryMock.Object, mapper);
         }
@@ -166,7 +158,7 @@ namespace QuizPlatform.Tests
         }
 
         [Fact]
-        public async Task GetTestWithScore_ForDecimalFractionAsShortAnswer_ReturnsTestsWithCorrectAnswersAndScore()
+        public async Task GetTestWithScore_ForDecimalShortAnswer_ReturnsTestsWithCorrectAnswersAndScore()
         {
             // Arrange
             const int testSessionId = 3;
@@ -176,7 +168,7 @@ namespace QuizPlatform.Tests
             var result = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
 
             // Assert
-            // 0.5 == "  1 / 2  "
+            // 0.5 == "  0.50000  "
             // Score: 1 / 1
             Assert.True(result.Success);
             Assert.NotNull(result.Value);
@@ -185,8 +177,221 @@ namespace QuizPlatform.Tests
             Assert.Equal(1, result.Value.MaxScore);
         }
 
+        [Fact]
+        public async Task GetTestWithScore_ForValueAsAFractionShortAnswer_ReturnsTestsWithCorrectAnswersAndScore()
+        {
+            // Arrange
+            const int testSessionId = 4;
+            const int userId = 2;
 
-        private List<Question> GetQuestions()
+            // Act
+            var result = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            // 0.5 == "  1 /   2  "
+            // Score: 1 / 1
+            Assert.True(result.Success);
+            Assert.NotNull(result.Value);
+            Assert.True(result.Value.IsCompleted);
+            Assert.Equal(1, result.Value.Score);
+            Assert.Equal(1, result.Value.MaxScore);
+        }
+
+        [Fact]
+        public async Task SaveUserAnswersAsync_ForNotStartedTest_ShouldSaveAllUserAnswers()
+        {
+            // Arrange
+            const int testSessionId = 5;
+            const int userId = 2;
+            var userAnswerDto = new List<UserAnswersDto>
+            {
+                new UserAnswersDto
+                {
+                    QuestionId = 3,
+                    ShortAnswerValue = " 1 /  2 "
+                }
+            };
+
+            // Act
+            var result = await _testSessionService.SaveUserAnswersAsync(userAnswerDto, testSessionId, false, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.False(searchResult.Value.IsCompleted);
+            Assert.Single(searchResult.Value.Questions!);
+            Assert.Equal(" 1 /  2 ", searchResult.Value.Questions?[0].Answers?[0].Answer);
+        }
+
+        [Fact]
+        public async Task SaveUserAnswersAsync_ForNotStartedTestAndFinishedImmediately_ShouldSaveAllUserAnswersAndCountScore()
+        {
+            // Arrange
+            const int testSessionId = 5;
+            const int userId = 2;
+            var userAnswerDto = new List<UserAnswersDto>
+            {
+                new UserAnswersDto
+                {
+                    QuestionId = 3,
+                    ShortAnswerValue = " 1 /  2 "
+                }
+            };
+
+            // Act
+            var result = await _testSessionService.SaveUserAnswersAsync(userAnswerDto, testSessionId, true, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.True(searchResult.Value.IsCompleted);
+            Assert.Single(searchResult.Value.Questions!);
+            Assert.Equal(" 1 /  2 ", searchResult.Value.Questions?[0].Answers?[0].Answer);
+            Assert.Equal(1, searchResult.Value.Score);
+            Assert.Equal(1, searchResult.Value.MaxScore);
+        }
+
+        [Fact]
+        public async Task SaveUserAnswersAsync_ForTheStartedTest_ShouldSaveModifiedUserAnswers()
+        {
+            // Arrange
+            const int testSessionId = 6;
+            const int userId = 2;
+            var userAnswerDto = new List<UserAnswersDto>
+            {
+                new UserAnswersDto
+                {
+                    QuestionId = 1,
+                    AnswerIds = new List<int> { 1 }
+                },
+                // modify existing answer to other value
+                new UserAnswersDto
+                {
+                    QuestionId = 2,
+                    AnswerIds = new List<int> { 3 }
+                }
+            };
+
+            // Act
+            var result = await _testSessionService.SaveUserAnswersAsync(userAnswerDto, testSessionId, true, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.Equal(2, searchResult.Value.Questions?.Count);
+            Assert.Equal(2, searchResult.Value.Score);
+            Assert.Equal(2, searchResult.Value.MaxScore);
+        }
+
+        [Fact]
+        public async Task SaveOneUserAnswersAsync_ForOneAnswersAndFinishEqualToFalse_SaveOneUserAnswer()
+        {
+            // Arrange
+            var userAnswerDto = new UserAnswersDto
+            {
+                QuestionId = 1,
+                AnswerIds = new List<int> { 1 }
+            };
+            const int testSessionId = 6;
+            const int userId = 2;
+
+            // Act
+            var result = await _testSessionService.SaveOneUserAnswersAsync(userAnswerDto, testSessionId, false, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.Equal(2, searchResult.Value.Questions?.Count);
+            Assert.Equal(0, searchResult.Value.Score);
+            Assert.Equal(0, searchResult.Value.MaxScore);
+        }
+
+        [Fact]
+        public async Task SaveOneUserAnswersAsync_ForSkippedAnswerAndFinishFlag_SaveOneUserAnswerAndCountScore()
+        {
+            // Arrange
+            var userAnswerDto = new UserAnswersDto
+            {
+                QuestionId = 1,
+                AnswerIds = new List<int>()
+            };
+            const int testSessionId = 6;
+            const int userId = 2;
+
+            // Act
+            var result = await _testSessionService.SaveOneUserAnswersAsync(userAnswerDto, testSessionId, true, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.Equal(2, searchResult.Value.Questions?.Count);
+            Assert.Equal(0, searchResult.Value.Score);
+            Assert.Equal(2, searchResult.Value.MaxScore);
+        }
+
+        [Fact]
+        public async Task SaveOneUserAnswersAsync_ForOneCorrectAnswersAndFinishFlag_SaveOneUserAnswerAndCountScore()
+        {
+            // Arrange
+            var userAnswerDto = new UserAnswersDto
+            {
+                QuestionId = 1,
+                AnswerIds = new List<int> { 1 }
+            };
+            const int testSessionId = 6;
+            const int userId = 2;
+
+            // Act
+            var result = await _testSessionService.SaveOneUserAnswersAsync(userAnswerDto, testSessionId, true, userId);
+            var searchResult = await _testSessionService.GetTestByTestSessionIdAsync(testSessionId, userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(searchResult.Value);
+            Assert.Equal(2, searchResult.Value.Questions?.Count);
+            Assert.Equal(1, searchResult.Value.Score);
+            Assert.Equal(2, searchResult.Value.MaxScore);
+        }
+
+
+        private static List<UserAnswers> GetUserAnswers(List<Question> questions)
+        {
+            return new List<UserAnswers>
+            {
+                new UserAnswers
+                {
+                    Id = 1, QuestionId = 1, Question = questions.FirstOrDefault(e => e.Id == 1), TestSessionId = 2,
+                    QuestionAnswerId = 1, QuestionAnswer = new QuestionAnswer { Id = 1, Content = "A", Correct = true }
+                },
+                new UserAnswers
+                {
+                    Id = 2, QuestionId = 2, Question = questions.FirstOrDefault(e => e.Id == 2), TestSessionId = 2,
+                    QuestionAnswerId = 2, QuestionAnswer = new QuestionAnswer { Id = 2, Content = "A", Correct = true }
+                },
+                new UserAnswers
+                {
+                    Id = 3, QuestionId = 3, Question = questions.FirstOrDefault(e => e.Id == 3), TestSessionId = 3,
+                    ShortAnswerValue = "  0.5000   "
+                },
+                new UserAnswers
+                {
+                    Id = 4, QuestionId = 3, Question = questions.FirstOrDefault(e => e.Id == 3), TestSessionId = 4,
+                    ShortAnswerValue = "  1 /   2   "
+                },
+                new UserAnswers
+                {
+                    Id = 5, QuestionId = 2, Question = questions.FirstOrDefault(e => e.Id == 2), TestSessionId = 6,
+                    QuestionAnswerId = 2, QuestionAnswer = new QuestionAnswer { Id = 2, Content = "A", Correct = true }
+                },
+            };
+        }
+
+        private static List<Question> GetQuestions()
         {
             return new List<Question>
             {
@@ -230,7 +435,7 @@ namespace QuizPlatform.Tests
             };
         }
 
-        private List<Test> GetTests(List<Question> questions)
+        private static List<Test> GetTests(List<Question> questions)
         {
             return new List<Test>
             {
@@ -261,7 +466,7 @@ namespace QuizPlatform.Tests
             };
         }
 
-        private List<TestSession> GetTestSessions(List<Test> tests)
+        private static List<TestSession> GetTestSessions(List<Test> tests)
         {
             return new List<TestSession>
             {
@@ -298,10 +503,43 @@ namespace QuizPlatform.Tests
                     Test = tests.FirstOrDefault(e => e.Id == 2),
                     UserId = 2
                 },
+                new TestSession
+                {
+                    Id = 4,
+                    IsCompleted = true,
+                    OneQuestionMode = true,
+                    ShuffleAnswers = false,
+                    ShuffleQuestions = false,
+                    TestId = 2,
+                    Test = tests.FirstOrDefault(e => e.Id == 2),
+                    UserId = 2
+                },
+                new TestSession
+                {
+                    Id = 5,
+                    IsCompleted = false,
+                    OneQuestionMode = false,
+                    ShuffleAnswers = false,
+                    ShuffleQuestions = false,
+                    TestId = 2,
+                    Test = tests.FirstOrDefault(e => e.Id == 2),
+                    UserId = 2
+                },
+                new TestSession()
+                {
+                    Id = 6,
+                    IsCompleted = false,
+                    OneQuestionMode = false,
+                    ShuffleAnswers = false,
+                    ShuffleQuestions = false,
+                    TestId = 1,
+                    Test = tests.FirstOrDefault(e => e.Id == 1),
+                    UserId = 2
+                }
             };
         }
 
-        private Mock<ITestSessionRepository> GetTestSessionRepositoryMock(List<TestSession> testSessions)
+        private static Mock<ITestSessionRepository> GetTestSessionRepositoryMock(List<TestSession> testSessions)
         {
             var testSessionRepositoryMock = new Mock<ITestSessionRepository>();
             testSessionRepositoryMock.Setup(x => x.AddAsync(It.IsAny<TestSession>())).Callback((TestSession testSession) =>

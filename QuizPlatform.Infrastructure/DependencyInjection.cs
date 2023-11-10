@@ -1,5 +1,4 @@
-﻿using EducationPlatform.Infrastructure.Services;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using QuizPlatform.Infrastructure.Builders;
 using QuizPlatform.Infrastructure.Interfaces;
 using QuizPlatform.Infrastructure.Repositories;
@@ -21,7 +20,6 @@ namespace QuizPlatform.Infrastructure
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILoggingService, LoggingService>();
-            services.AddScoped<IQuestionService, QuestionService>();
             services.AddScoped<ITestService, TestService>();
             services.AddScoped<ITestSessionService, TestSessionService>();
             services.AddScoped<IFlashcardService, FlashcardService>();

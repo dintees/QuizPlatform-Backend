@@ -2,5 +2,5 @@
 
 public interface IDatabaseCleaner
 {
-    Task CleanUserTokensEntity();
+    Task CleanUserTokensEntityAsync();
 }
