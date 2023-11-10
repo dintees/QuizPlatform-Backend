@@ -252,7 +252,7 @@ namespace QuizPlatform.Infrastructure.Services
             var userTestSessions = await _testSessionRepository.GetByUserIdWithTestAsync(userId);
             var data = new Dictionary<string, UserStatisticsDto>();
 
-            var startDate = DateTime.Now.AddDays(-14).Date;
+            var startDate = DateTime.Now.AddDays(-13).Date;
             var endDate = DateTime.Now.Date;
 
             for (var day = startDate; day <= endDate; day = day.AddDays(1))

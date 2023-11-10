@@ -358,6 +358,23 @@ namespace QuizPlatform.Tests
             Assert.Equal(2, searchResult.Value.MaxScore);
         }
 
+        [Fact]
+        public async Task GetStatisticsForUserAsync_ForGivenUserId_ReturnsDictionaryWithUserStatisticsOfTheLast14Days()
+        {
+            // Arrange
+            const int userId = 2;
+
+            // Act
+            var result = await _testSessionService.GetStatisticsForUserAsync(userId);
+
+            // Assert
+            Assert.Equal(14, result.Count);
+            Assert.Equal(1, result[DateTime.Now.Date.ToString("yyyy-MM-dd")].NumberOfSolvedTests);
+            Assert.Equal(100, result[DateTime.Now.Date.ToString("yyyy-MM-dd")].Average);
+            Assert.Equal(0, result[DateTime.Now.AddDays(-1).Date.ToString("yyyy-MM-dd")].NumberOfSolvedTests);
+            Assert.Equal(0, result[DateTime.Now.AddDays(-1).Date.ToString("yyyy-MM-dd")].Average);
+        }
+
 
         private static List<UserAnswers> GetUserAnswers(List<Question> questions)
         {
@@ -479,7 +496,9 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = true,
                     TestId = 1,
                     Test = tests.FirstOrDefault(e => e.Id == 1),
-                    UserId = 1
+                    UserId = 1,
+                    TsInsert = DateTime.Now,
+                    TsUpdate = DateTime.Now,
                 },
                 new TestSession
                 {
@@ -490,7 +509,11 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = true,
                     TestId = 1,
                     Test = tests.FirstOrDefault(e => e.Id == 1),
-                    UserId = 1
+                    UserId = 1,
+                    Score = 2,
+                    MaxScore = 2,
+                    TsInsert = DateTime.Now,
+                    TsUpdate = DateTime.Now,
                 },
                 new TestSession
                 {
@@ -501,7 +524,11 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = false,
                     TestId = 2,
                     Test = tests.FirstOrDefault(e => e.Id == 2),
-                    UserId = 2
+                    UserId = 2,
+                    Score = 1,
+                    MaxScore = 1,
+                    TsInsert = DateTime.Now,
+                    TsUpdate = DateTime.Now,
                 },
                 new TestSession
                 {
@@ -512,7 +539,11 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = false,
                     TestId = 2,
                     Test = tests.FirstOrDefault(e => e.Id == 2),
-                    UserId = 2
+                    UserId = 2,
+                    Score = 1,
+                    MaxScore = 1,
+                    TsInsert = DateTime.Now.AddDays(-20),
+                    TsUpdate = DateTime.Now.AddDays(-18),
                 },
                 new TestSession
                 {
@@ -523,7 +554,9 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = false,
                     TestId = 2,
                     Test = tests.FirstOrDefault(e => e.Id == 2),
-                    UserId = 2
+                    UserId = 2,
+                    TsInsert = DateTime.Now,
+                    TsUpdate = DateTime.Now,
                 },
                 new TestSession()
                 {
@@ -534,7 +567,9 @@ namespace QuizPlatform.Tests
                     ShuffleQuestions = false,
                     TestId = 1,
                     Test = tests.FirstOrDefault(e => e.Id == 1),
-                    UserId = 2
+                    UserId = 2,
+                    TsInsert = DateTime.Now,
+                    TsUpdate = DateTime.Now,
                 }
             };
         }
