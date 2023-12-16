@@ -18,7 +18,7 @@ namespace QuizPlatform.Service
             {
                 var now = DateTime.Now;
 
-                var scheduledTime = new DateTime(now.Year, now.Month, now.Day, 18, 0, 0);
+                var scheduledTime = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
 
                 if (now.Hour == scheduledTime.Hour)
                 {
@@ -30,7 +30,7 @@ namespace QuizPlatform.Service
                 }
 
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
             }
         }
     }

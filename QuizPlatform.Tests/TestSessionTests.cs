@@ -254,7 +254,7 @@ namespace QuizPlatform.Tests
         }
 
         [Fact]
-        public async Task SaveUserAnswersAsync_ForTheStartedTest_ShouldSaveModifiedUserAnswers()
+        public async Task SaveUserAnswersAsync_ForTheStartedTest_ShouldSaveModifiedUserAnswersWithScore()
         {
             // Arrange
             const int testSessionId = 6;
