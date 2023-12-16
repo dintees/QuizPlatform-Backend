@@ -252,7 +252,7 @@ namespace QuizPlatform.Infrastructure.Services
             var userTestSessions = await _testSessionRepository.GetByUserIdWithTestAsync(userId);
             var data = new Dictionary<string, UserStatisticsDto>();
 
-            var startDate = DateTime.Now.AddDays(-14).Date;
+            var startDate = DateTime.Now.AddDays(-13).Date;
             var endDate = DateTime.Now.Date;
 
             for (var day = startDate; day <= endDate; day = day.AddDays(1))
@@ -342,7 +342,7 @@ namespace QuizPlatform.Infrastructure.Services
         private static bool CompareStrings(string str1, string str2)
         {
             if (double.TryParse(str1, CultureInfo.InvariantCulture, out double num1) && double.TryParse(str2, CultureInfo.InvariantCulture, out double num2))
-                return Math.Abs(num1 - num2) < double.Epsilon;
+                return Math.Abs(num1 - num2) < 0.0001; // double.Epsilon;
             return str1.Equals(str2);
         }
 

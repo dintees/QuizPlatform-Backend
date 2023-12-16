@@ -327,7 +327,7 @@ namespace QuizPlatform.Tests
             Assert.Equal(testDto.Title, result.Value.Title);
             Assert.Equal(testDto.Questions.Count, result.Value.Questions?.Count);
         }
-
+        
         [Fact]
         public async Task ModifyTestAsync_ForUserWhoIsNotOwningTest_ReturnsSuccessFalseWithProperErrorMessage()
         {
@@ -364,11 +364,46 @@ namespace QuizPlatform.Tests
         }
 
         [Fact]
+        public async Task ModifyTestAsync_ForNotValidQuestion_ReturnsSuccessFalseWithProperErrorMessage()
+        {
+            // Arrange
+            const int testId = 2;
+            const int userId = 5;
+            var testDto = new TestDto
+            {
+                Description = "New test 2 description",
+                Questions = new List<QuestionDto>
+                {
+                    new QuestionDto
+                    {
+                        QuestionType = QuestionType.SingleChoice,
+                        Answers = new List<AnswerDto>
+                        {
+                            new AnswerDto { Answer = "A", Correct = false },
+                            new AnswerDto { Answer = "B", Correct = false }
+                        },
+                        MathMode = false
+                    }
+                },
+                IsPublic = false,
+            };
+
+            // Act
+            var result = await _testService.ModifyTestAsync(testId, testDto, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.ErrorMessage);
+            Assert.Equal(TestErrorMessages.ValidationError, result.ErrorMessage);
+        }
+
+        [Fact]
         public async Task ModifyTestAsync_ForIncorrectParameters_ReturnsSuccessFalseWithProperErrorMessage()
         {
             // Arrange
-            var testId = 2;
-            var userId = 5;
+            const int testId = 2;
+            const int userId = 5;
             var testDto = new TestDto
             {
                 Description = "New test 2 description",
@@ -403,8 +438,8 @@ namespace QuizPlatform.Tests
         public async Task ModifyTestAsync_ForCorrectParameters_ModifiesTestAndReturnsResultObject()
         {
             // Arrange
-            var testId = 2;
-            var userId = 5;
+            const int testId = 2;
+            const int userId = 5;
             var testDto = new TestDto
             {
                 Title = "New test 2 title",
@@ -601,7 +636,7 @@ namespace QuizPlatform.Tests
             Assert.Equal(afterDeleting.Count, beforeDeleting.Count - 1);
         }
 
-        private Mock<ITestRepository> GetSetRepositoryMock(List<Test> tests)
+        private static Mock<ITestRepository> GetSetRepositoryMock(List<Test> tests)
         {
             var mock = new Mock<ITestRepository>();
             mock.Setup(x => x.GetTestWithQuestionsByIdAsync(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<bool>()))
@@ -629,7 +664,7 @@ namespace QuizPlatform.Tests
             return mock;
         }
 
-        private List<Question> GetQuestions()
+        private static List<Question> GetQuestions()
         {
             return new List<Question>
             {
@@ -702,7 +737,7 @@ namespace QuizPlatform.Tests
         }
 
 
-        private List<Test> GetTests()
+        private static List<Test> GetTests()
         {
             return new List<Test>
             {
